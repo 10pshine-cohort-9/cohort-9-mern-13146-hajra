@@ -2,19 +2,32 @@ require("dotenv").config();
 
 const app = require("./app");
 const logger = require("./src/logger/logger");
-
+const pool = require("./src/config/db");
 
 const portValue = process.env.PORT || 5000;
-
 const PORT = Number(portValue);
-
 
 if (!Number.isInteger(PORT) || PORT < 1 || PORT > 65535) {
     logger.error("Invalid PORT configuration");
     process.exit(1);
 }
 
+async function startServer() {
+    try {
+        const connection = await pool.getConnection();
 
-app.listen(PORT, () => {
-    logger.info(`Server running on port ${PORT}`);
-});
+        logger.info("Database connected successfully");
+
+        connection.release();
+
+        app.listen(PORT, () => {
+            logger.info(`Server running on port ${PORT}`);
+        });
+
+    } catch (error) {
+        logger.error(error, "Database connection failed");
+        process.exit(1);
+    }
+}
+
+startServer();
