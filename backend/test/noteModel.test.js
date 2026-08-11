@@ -1,4 +1,5 @@
 const { expect } = require("chai");
+const assert = require("assert");
 
 const {
     createUser,
@@ -108,6 +109,39 @@ describe("Note Model", () => {
     expect(note.user_id).to.equal(testUserId);
     expect(note.title).to.equal("Get Note Test");
     expect(note.content).to.equal("Testing get note by ID.");
+});
+
+it("should reject an invalid user_id", async () => {
+    await assert.rejects(
+        createNote({
+            user_id: null,
+            title: "Test note",
+            content: "Test content"
+        }),
+        /Valid user_id is required/
+    );
+});
+
+it("should reject an empty title", async () => {
+    await assert.rejects(
+        createNote({
+            user_id: 1,
+            title: "",
+            content: "Test content"
+        }),
+        /Title is required/
+    );
+});
+
+it("should reject empty content", async () => {
+    await assert.rejects(
+        createNote({
+            user_id: 1,
+            title: "Test note",
+            content: ""
+        }),
+        /Content is required/
+    );
 });
 
 it("should not allow a user to access another user's note", async () => {

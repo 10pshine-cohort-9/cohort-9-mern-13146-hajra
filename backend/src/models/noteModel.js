@@ -1,7 +1,23 @@
 const pool = require("../config/db");
 
 async function createNote(noteData) {
+    if (!noteData || typeof noteData !== "object") {
+        throw new Error("Note data is required");
+    }
+
     const { user_id, title, content } = noteData;
+
+    if (!Number.isInteger(user_id) || user_id <= 0) {
+        throw new Error("Valid user_id is required");
+    }
+
+    if (typeof title !== "string" || title.trim() === "") {
+        throw new Error("Title is required");
+    }
+
+    if (typeof content !== "string" || content.trim() === "") {
+        throw new Error("Content is required");
+    }
 
     const [result] = await pool.execute(
         `INSERT INTO notes
