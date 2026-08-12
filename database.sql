@@ -14,9 +14,6 @@ CREATE TABLE IF NOT EXISTS users (
 
     profile_picture VARCHAR(255) DEFAULT NULL,
 
-    reset_password_token VARCHAR(255) DEFAULT NULL,
-
-    reset_password_expires DATETIME DEFAULT NULL,
 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
