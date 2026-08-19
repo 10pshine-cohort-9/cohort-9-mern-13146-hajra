@@ -31,9 +31,7 @@ async function register(req, res, next) {
 
         if (existingUser) {
             logger.warn(
-    {
-        email: normalizedEmail
-    },
+    { },
     "Registration attempt with an already registered email"
 );
             return res.status(409).json({
@@ -54,7 +52,6 @@ async function register(req, res, next) {
         logger.info(
     {
         userId,
-        email: normalizedEmail
     },
     "User registered successfully"
 );
@@ -95,9 +92,7 @@ async function login(req, res, next) {
 
         if (!user) {
             logger.warn(
-    {
-        email: normalizedEmail
-    },
+    {  },
     "Login failed: user not found"
 );
             return res.status(401).json({
@@ -113,10 +108,7 @@ async function login(req, res, next) {
 
         if (!passwordMatches) {
             logger.warn(
-    {
-        userId: user.id,
-        email: normalizedEmail
-    },
+    {},
     "Login failed: invalid password"
 );
             return res.status(401).json({
@@ -142,7 +134,6 @@ async function login(req, res, next) {
         logger.info(
     {
         userId: user.id,
-        email: normalizedEmail
     },
     "User logged in successfully"
 );
