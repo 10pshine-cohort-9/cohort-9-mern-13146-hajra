@@ -4,10 +4,8 @@ const request = require("supertest");
 const app = require("../app");
 // ... rest of your test code
 const { expect } = require("chai");
-const request = require("supertest");
 const bcrypt = require("bcryptjs");
 
-const app = require("../app");
 const pool = require("../src/config/db");
 const userModel = require("../src/models/userModel");
 
