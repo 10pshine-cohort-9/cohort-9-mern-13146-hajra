@@ -25,10 +25,11 @@ app.get("/api/health",(req,res)=>{
         message:"Server is healthy"
     });
 });
-app.get("/__test__/error", (req, res, next) => {
-    next(new Error("Test application error"));
-});
-
+if (process.env.NODE_ENV === "test") {
+    app.get("/__test__/error", (req, res, next) => {
+        next(new Error("Test application error"));
+    });
+}
 app.use("/api/auth", authRoutes);
 app.use("/api/notes", noteRoutes);
 

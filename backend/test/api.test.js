@@ -47,21 +47,20 @@ describe("Authentication and Notes API", () => {
     });
 
     after(async () => {
-        if (userOne?.id) {
-            await pool.execute(
-                "DELETE FROM users WHERE id = ?",
-                [userOne.id]
-            );
-        }
+    if (userOne?.id) {
+        await pool.execute(
+            "DELETE FROM users WHERE id = ?",
+            [userOne.id]
+        );
+    }
 
-        if (userTwo?.id) {
-            await pool.execute(
-                "DELETE FROM users WHERE id = ?",
-                [userTwo.id]
-            );
-        }
-
-    });
+    if (userTwo?.id) {
+        await pool.execute(
+            "DELETE FROM users WHERE id = ?",
+            [userTwo.id]
+        );
+    }
+});
 
     describe("Authentication", () => {
         it("should reject registration with missing fields", async () => {
