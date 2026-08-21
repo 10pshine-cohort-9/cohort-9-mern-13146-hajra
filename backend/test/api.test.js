@@ -1,3 +1,8 @@
+process.env.NODE_ENV = "test";
+
+const request = require("supertest");
+const app = require("../app");
+// ... rest of your test code
 const { expect } = require("chai");
 const request = require("supertest");
 const bcrypt = require("bcryptjs");
