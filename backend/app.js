@@ -9,11 +9,10 @@ const noteRoutes = require("./src/routes/noteRoutes");
 
 const app = express();
 
-// Core Middleware - Restricted CORS options
-const allowedOrigins = process.env.ALLOWED_ORIGINS 
-  ? process.env.ALLOWED_ORIGINS.split(",") 
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(",").map((origin) => origin.trim()).filter(Boolean)
   : ["http://localhost:3000"];
-
+  
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin)) {

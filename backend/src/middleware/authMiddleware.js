@@ -23,7 +23,6 @@ function authenticateToken(req, res, next) {
         const secret = process.env.JWT_SECRET || "defaultsecret";
         const decoded = jwt.verify(token, secret);
 
-        // Standardized check for 'id' (matches token payload in authController)
         const userId = decoded.id || decoded.userId;
 
         if (!userId) {

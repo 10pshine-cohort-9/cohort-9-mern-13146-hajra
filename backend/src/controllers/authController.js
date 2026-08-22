@@ -4,6 +4,7 @@ const userModel = require("../models/userModel");
 const logger = require("../logger/logger");
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const JWT_SECRET = process.env.JWT_SECRET || "defaultsecret";
 
 exports.register = async (req, res, next) => {
     try {
@@ -12,6 +13,7 @@ exports.register = async (req, res, next) => {
         if (
             typeof name !== "string" ||
             name.trim() === "" ||
+            name.length > 255 ||
             typeof email !== "string" ||
             !EMAIL_REGEX.test(email.trim()) ||
             typeof password !== "string" ||
@@ -28,10 +30,7 @@ exports.register = async (req, res, next) => {
         const existingUser = await userModel.findUserByEmail(normalizedEmail);
 
         if (existingUser) {
-            logger.warn(
-                { email: normalizedEmail },
-                "Registration attempt with an already registered email"
-            );
+            logger.warn("Registration attempt with an already registered email");
             return res.status(409).json({
                 success: false,
                 message: "Email is already registered"
@@ -48,7 +47,7 @@ exports.register = async (req, res, next) => {
 
         const token = jwt.sign(
             { id: userId, email: normalizedEmail },
-            process.env.JWT_SECRET || "defaultsecret",
+            JWT_SECRET,
             { expiresIn: "24h" }
         );
 
@@ -109,7 +108,7 @@ exports.login = async (req, res, next) => {
 
         const token = jwt.sign(
             { id: user.id, email: user.email },
-            process.env.JWT_SECRET || "defaultsecret",
+            JWT_SECRET,
             { expiresIn: "24h" }
         );
 

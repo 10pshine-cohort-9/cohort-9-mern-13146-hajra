@@ -55,13 +55,13 @@ async function getNoteById(noteId, userId) {
 }
 
 async function updateNote(noteId, userId, noteData) {
-    const { title, content } = noteData;
+    const { title, content, is_pinned, is_archived } = noteData;
 
     const [result] = await pool.execute(
         `UPDATE notes
-         SET title = ?, content = ?
+         SET title = ?, content = ?, is_pinned = COALESCE(?, is_pinned), is_archived = COALESCE(?, is_archived)
          WHERE id = ? AND user_id = ?`,
-        [title, content, noteId, userId]
+        [title, content, is_pinned !== undefined ? is_pinned : null, is_archived !== undefined ? is_archived : null, noteId, userId]
     );
 
     return result.affectedRows;
@@ -128,7 +128,7 @@ async function getArchivedNotes(userId) {
 module.exports = {
     createNote,
     getNotesByUser,
-    getNotesByUserId: getNotesByUser, // <-- Added alias to prevent runtime TypeError
+    getNotesByUserId: getNotesByUser,
     getNoteById,
     updateNote,
     deleteNote,

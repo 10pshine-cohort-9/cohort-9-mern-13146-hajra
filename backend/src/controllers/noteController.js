@@ -38,7 +38,7 @@ exports.createNote = async (req, res, next) => {
 
 exports.getNotes = async (req, res, next) => {
     try {
-        const notes = await noteModel.getNotesByUserId(req.user.id);
+        const notes = await noteModel.getNotesByUser(req.user.id);
         return res.status(200).json({
             success: true,
             data: notes
@@ -141,7 +141,7 @@ exports.togglePin = async (req, res, next) => {
         if (!note) {
             return res.status(404).json({ success: false, message: "Note not found" });
         }
-        await noteModel.updateNote(id, req.user.id, { is_pinned: !note.is_pinned });
+        await noteModel.togglePin(id, req.user.id, !note.is_pinned);
         const updated = await noteModel.getNoteById(id, req.user.id);
         return res.status(200).json({ success: true, data: updated });
     } catch (error) {
@@ -156,7 +156,7 @@ exports.toggleArchive = async (req, res, next) => {
         if (!note) {
             return res.status(404).json({ success: false, message: "Note not found" });
         }
-        await noteModel.updateNote(id, req.user.id, { is_archived: !note.is_archived });
+        await noteModel.toggleArchive(id, req.user.id, !note.is_archived);
         const updated = await noteModel.getNoteById(id, req.user.id);
         return res.status(200).json({ success: true, data: updated });
     } catch (error) {
@@ -166,9 +166,8 @@ exports.toggleArchive = async (req, res, next) => {
 
 exports.getPinnedNotes = async (req, res, next) => {
     try {
-        const notes = await noteModel.getNotesByUserId(req.user.id);
-        const pinned = notes.filter(n => n.is_pinned);
-        return res.status(200).json({ success: true, data: pinned });
+        const notes = await noteModel.getPinnedNotes(req.user.id);
+        return res.status(200).json({ success: true, data: notes });
     } catch (error) {
         next(error);
     }
@@ -176,9 +175,8 @@ exports.getPinnedNotes = async (req, res, next) => {
 
 exports.getArchivedNotes = async (req, res, next) => {
     try {
-        const notes = await noteModel.getNotesByUserId(req.user.id);
-        const archived = notes.filter(n => n.is_archived);
-        return res.status(200).json({ success: true, data: archived });
+        const notes = await noteModel.getArchivedNotes(req.user.id);
+        return res.status(200).json({ success: true, data: notes });
     } catch (error) {
         next(error);
     }
