@@ -9,8 +9,22 @@ const noteRoutes = require("./src/routes/noteRoutes");
 
 const app = express();
 
-// Core Middleware
-app.use(cors());
+// Core Middleware - Restricted CORS options
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(",") 
+  : ["http://localhost:3000"];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true
+}));
+
 app.use(express.json());
 app.use(pinoHttp({ logger }));
 
@@ -26,16 +40,18 @@ app.get("/api/health", (req, res) => {
     });
 });
 
+// Test-only Error Endpoint
 if (process.env.NODE_ENV === "test") {
     app.get("/__test__/error", (req, res, next) => {
         next(new Error("Test application error"));
     });
 }
 
+// API Feature Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/notes", noteRoutes);
 
-// 404 Route Not Found Handler (Must be after all routes)
+// 404 Route Not Found Handler
 app.use((req, res) => {
     res.status(404).json({
         success: false,
@@ -43,6 +59,7 @@ app.use((req, res) => {
     });
 });
 
+// Global Error Handler
 app.use(errorMiddleware);
 
 module.exports = app;

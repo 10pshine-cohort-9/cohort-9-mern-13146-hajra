@@ -128,6 +128,7 @@ async function getArchivedNotes(userId) {
 module.exports = {
     createNote,
     getNotesByUser,
+    getNotesByUserId: getNotesByUser, // <-- Added alias to prevent runtime TypeError
     getNoteById,
     updateNote,
     deleteNote,
