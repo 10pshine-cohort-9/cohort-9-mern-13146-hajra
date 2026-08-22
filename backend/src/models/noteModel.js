@@ -22,10 +22,8 @@ async function createNote(noteData) {
         }
 
         const [result] = await pool.execute(
-            `INSERT INTO notes
-            (user_id, title, content)
-            VALUES (?, ?, ?)`,
-            [user_id, title, content]
+            `INSERT INTO notes (user_id, title, content) VALUES (?, ?, ?)`,
+            [user_id, title.trim(), content.trim()]
         );
 
         return result.insertId;
@@ -38,14 +36,12 @@ async function createNote(noteData) {
 async function getNotesByUser(userId) {
     try {
         const [rows] = await pool.execute(
-            `SELECT id, user_id, title, content, is_pinned, is_archived,
-                    created_at, updated_at
+            `SELECT id, user_id, title, content, is_pinned, is_archived, created_at, updated_at
              FROM notes
              WHERE user_id = ?
              ORDER BY updated_at DESC`,
             [userId]
         );
-
         return rows;
     } catch (error) {
         logger.error(`Error in getNotesByUser for userId ${userId}: ${error.message}`);
@@ -56,13 +52,11 @@ async function getNotesByUser(userId) {
 async function getNoteById(noteId, userId) {
     try {
         const [rows] = await pool.execute(
-            `SELECT id, user_id, title, content, is_pinned, is_archived,
-                    created_at, updated_at
+            `SELECT id, user_id, title, content, is_pinned, is_archived, created_at, updated_at
              FROM notes
              WHERE id = ? AND user_id = ?`,
             [noteId, userId]
         );
-
         return rows[0] || null;
     } catch (error) {
         logger.error(`Error in getNoteById for noteId ${noteId}, userId ${userId}: ${error.message}`);
@@ -101,11 +95,9 @@ async function updateNote(noteId, userId, noteData) {
 async function deleteNote(noteId, userId) {
     try {
         const [result] = await pool.execute(
-            `DELETE FROM notes
-             WHERE id = ? AND user_id = ?`,
+            `DELETE FROM notes WHERE id = ? AND user_id = ?`,
             [noteId, userId]
         );
-
         return result.affectedRows;
     } catch (error) {
         logger.error(`Error in deleteNote for noteId ${noteId}, userId ${userId}: ${error.message}`);
@@ -116,23 +108,17 @@ async function deleteNote(noteId, userId) {
 async function togglePin(noteId, userId, isPinned) {
     try {
         let result;
-
         if (isPinned !== undefined) {
             [result] = await pool.execute(
-                `UPDATE notes
-                 SET is_pinned = ?
-                 WHERE id = ? AND user_id = ?`,
+                `UPDATE notes SET is_pinned = ? WHERE id = ? AND user_id = ?`,
                 [isPinned, noteId, userId]
             );
         } else {
             [result] = await pool.execute(
-                `UPDATE notes
-                 SET is_pinned = NOT is_pinned
-                 WHERE id = ? AND user_id = ?`,
+                `UPDATE notes SET is_pinned = NOT is_pinned WHERE id = ? AND user_id = ?`,
                 [noteId, userId]
             );
         }
-
         return result.affectedRows;
     } catch (error) {
         logger.error(`Error in togglePin for noteId ${noteId}, userId ${userId}: ${error.message}`);
@@ -143,23 +129,17 @@ async function togglePin(noteId, userId, isPinned) {
 async function toggleArchive(noteId, userId, isArchived) {
     try {
         let result;
-
         if (isArchived !== undefined) {
             [result] = await pool.execute(
-                `UPDATE notes
-                 SET is_archived = ?
-                 WHERE id = ? AND user_id = ?`,
+                `UPDATE notes SET is_archived = ? WHERE id = ? AND user_id = ?`,
                 [isArchived, noteId, userId]
             );
         } else {
             [result] = await pool.execute(
-                `UPDATE notes
-                 SET is_archived = NOT is_archived
-                 WHERE id = ? AND user_id = ?`,
-                [isArchived, noteId, userId]
+                `UPDATE notes SET is_archived = NOT is_archived WHERE id = ? AND user_id = ?`,
+                [noteId, userId]
             );
         }
-
         return result.affectedRows;
     } catch (error) {
         logger.error(`Error in toggleArchive for noteId ${noteId}, userId ${userId}: ${error.message}`);
@@ -170,14 +150,12 @@ async function toggleArchive(noteId, userId, isArchived) {
 async function getPinnedNotes(userId) {
     try {
         const [rows] = await pool.execute(
-            `SELECT id, user_id, title, content, is_pinned, is_archived,
-                    created_at, updated_at
+            `SELECT id, user_id, title, content, is_pinned, is_archived, created_at, updated_at
              FROM notes
              WHERE user_id = ? AND is_pinned = TRUE
              ORDER BY updated_at DESC`,
             [userId]
         );
-
         return rows;
     } catch (error) {
         logger.error(`Error in getPinnedNotes for userId ${userId}: ${error.message}`);
@@ -188,17 +166,62 @@ async function getPinnedNotes(userId) {
 async function getArchivedNotes(userId) {
     try {
         const [rows] = await pool.execute(
-            `SELECT id, user_id, title, content, is_pinned, is_archived,
-                    created_at, updated_at
+            `SELECT id, user_id, title, content, is_pinned, is_archived, created_at, updated_at
              FROM notes
              WHERE user_id = ? AND is_archived = TRUE
              ORDER BY updated_at DESC`,
             [userId]
         );
-
         return rows;
     } catch (error) {
         logger.error(`Error in getArchivedNotes for userId ${userId}: ${error.message}`);
+        throw error;
+    }
+}
+
+async function searchNotes(userId, { q, pinned, archived, sort }) {
+    try {
+        let querySql = `
+            SELECT id, user_id, title, content, is_pinned, is_archived, created_at, updated_at
+            FROM notes
+            WHERE user_id = ?
+        `;
+        const params = [userId];
+
+        if (q && typeof q === "string" && q.trim() !== "") {
+            querySql += ` AND (title LIKE ? OR content LIKE ?)`;
+            const searchTerm = `%${q.trim()}%`;
+            params.push(searchTerm, searchTerm);
+        }
+
+        if (pinned !== undefined && pinned !== "") {
+            querySql += ` AND is_pinned = ?`;
+            params.push(pinned === "true" || pinned === "1" || pinned === true ? 1 : 0);
+        }
+
+        if (archived !== undefined && archived !== "") {
+            querySql += ` AND is_archived = ?`;
+            params.push(archived === "true" || archived === "1" || archived === true ? 1 : 0);
+        }
+
+        const sortMap = {
+            "title_asc": "title ASC",
+            "title_desc": "title DESC",
+            "oldest": "created_at ASC",
+            "created_asc": "created_at ASC",
+            "newest": "created_at DESC",
+            "created_desc": "created_at DESC",
+            "updated_asc": "updated_at ASC",
+            "updated_desc": "updated_at DESC"
+        };
+
+        const sortClause = sortMap[sort] || "updated_at DESC";
+        querySql += ` ORDER BY ${sortClause}`;
+
+        const [rows] = await pool.execute(querySql, params);
+        return rows;
+    } catch (error) {
+        logger.error(`Error in searchNotes for userId ${userId}: ${error.message}`);
         throw error;
     }
 }
@@ -213,5 +236,6 @@ module.exports = {
     togglePin,
     toggleArchive,
     getPinnedNotes,
-    getArchivedNotes
+    getArchivedNotes,
+    searchNotes
 };

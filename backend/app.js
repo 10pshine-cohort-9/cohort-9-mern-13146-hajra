@@ -6,13 +6,14 @@ const logger = require("./src/logger/logger");
 const errorMiddleware = require("./src/middleware/errorMiddleware");
 const authRoutes = require("./src/routes/authRoutes");
 const noteRoutes = require("./src/routes/noteRoutes");
+const userRoutes = require("./src/routes/userRoutes");
 
 const app = express();
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",").map((origin) => origin.trim()).filter(Boolean)
   : ["http://localhost:3000"];
-  
+
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -24,6 +25,7 @@ app.use(cors({
   credentials: true
 }));
 
+// Parsers & Logging Middlewares MUST come before route declarations
 app.use(express.json());
 app.use(pinoHttp({ logger }));
 
@@ -49,6 +51,7 @@ if (process.env.NODE_ENV === "test") {
 // API Feature Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/notes", noteRoutes);
+app.use("/api/user", userRoutes);
 
 // 404 Route Not Found Handler
 app.use((req, res) => {

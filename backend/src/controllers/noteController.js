@@ -199,3 +199,25 @@ exports.getArchivedNotes = async (req, res, next) => {
         next(error);
     }
 };
+
+
+exports.searchNotes = async (req, res, next) => {
+    try {
+        const { q, pinned, archived, sort } = req.query;
+
+        const notes = await noteModel.searchNotes(req.user.id, {
+            q,
+            pinned,
+            archived,
+            sort
+        });
+
+        return res.status(200).json({
+            success: true,
+            count: notes.length,
+            data: notes
+        });
+    } catch (error) {
+        next(error);
+    }
+};
