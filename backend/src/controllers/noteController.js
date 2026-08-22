@@ -137,13 +137,22 @@ exports.deleteNote = async (req, res, next) => {
 exports.togglePin = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const note = await noteModel.getNoteById(id, req.user.id);
-        if (!note) {
-            return res.status(404).json({ success: false, message: "Note not found" });
+
+        const affectedRows = await noteModel.togglePin(id, req.user.id);
+        if (!affectedRows) {
+            return res.status(404).json({
+                success: false,
+                message: "Note not found"
+            });
         }
-        await noteModel.togglePin(id, req.user.id, !note.is_pinned);
-        const updated = await noteModel.getNoteById(id, req.user.id);
-        return res.status(200).json({ success: true, data: updated });
+
+        const updatedNote = await noteModel.getNoteById(id, req.user.id);
+
+        return res.status(200).json({
+            success: true,
+            message: `Note ${updatedNote.is_pinned ? "pinned" : "unpinned"} successfully`,
+            data: updatedNote
+        });
     } catch (error) {
         next(error);
     }
@@ -152,13 +161,22 @@ exports.togglePin = async (req, res, next) => {
 exports.toggleArchive = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const note = await noteModel.getNoteById(id, req.user.id);
-        if (!note) {
-            return res.status(404).json({ success: false, message: "Note not found" });
+
+        const affectedRows = await noteModel.toggleArchive(id, req.user.id);
+        if (!affectedRows) {
+            return res.status(404).json({
+                success: false,
+                message: "Note not found"
+            });
         }
-        await noteModel.toggleArchive(id, req.user.id, !note.is_archived);
-        const updated = await noteModel.getNoteById(id, req.user.id);
-        return res.status(200).json({ success: true, data: updated });
+
+        const updatedNote = await noteModel.getNoteById(id, req.user.id);
+
+        return res.status(200).json({
+            success: true,
+            message: `Note ${updatedNote.is_archived ? "archived" : "unarchived"} successfully`,
+            data: updatedNote
+        });
     } catch (error) {
         next(error);
     }

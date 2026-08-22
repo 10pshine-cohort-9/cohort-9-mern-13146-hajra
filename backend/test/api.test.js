@@ -195,20 +195,25 @@ describe("API Integration Tests", () => {
         //     expect(response.body.data.title).to.equal("Updated Title");
         // });
 
+it("should update a note owned by user", async () => {
+    try {
+        const response = await request(app)
+            .put(`/api/notes/${noteId}`)
+            .set("Authorization", `Bearer ${tokenOne}`)
+            .send({
+                title: "Updated Title",
+                is_pinned: 1
+            });
 
-        it("should update a note owned by user", async () => {
-    const response = await request(app)
-        .put(`/api/notes/${noteId}`)
-        .set("Authorization", `Bearer ${tokenOne}`)
-        .send({
-            title: "Updated Title",
-            is_pinned: 1
-        });
-
-    expect(response.status).to.equal(200);
-    expect(response.body.data.title).to.equal("Updated Title");
-    expect(Number(response.body.data.is_pinned)).to.equal(1);
+        expect(response.status).to.equal(200);
+        expect(response.body.data.title).to.equal("Updated Title");
+        expect(Number(response.body.data.is_pinned)).to.equal(1);
+    } catch (error) {
+        console.error("Failed to update note owned by user:", error);
+        throw error;
+    }
 });
+
         it("should delete a note owned by user", async () => {
             const response = await request(app)
                 .delete(`/api/notes/${noteId}`)
