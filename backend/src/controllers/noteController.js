@@ -92,12 +92,12 @@ exports.updateNote = async (req, res, next) => {
             });
         }
 
-        await noteModel.updateNote(id, req.user.id, {
-            title: title !== undefined ? title.trim() : note.title,
-            content: content !== undefined ? content.trim() : note.content,
-            is_pinned: is_pinned !== undefined ? is_pinned : note.is_pinned,
-            is_archived: is_archived !== undefined ? is_archived : note.is_archived
-        });
+await noteModel.updateNote(id, req.user.id, {
+    title: title !== undefined ? title.trim() : undefined,
+    content: content !== undefined ? content.trim() : undefined,
+    is_pinned: is_pinned !== undefined ? is_pinned : undefined,
+    is_archived: is_archived !== undefined ? is_archived : undefined
+});
 
         const updatedNote = await noteModel.getNoteById(id, req.user.id);
 

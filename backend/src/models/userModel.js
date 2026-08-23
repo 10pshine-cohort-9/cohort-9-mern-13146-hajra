@@ -1,16 +1,12 @@
 const pool = require("../config/db");
 const logger = require("../logger/logger");
 
-async function createUser(userData) {
+async function createUser({ name, email, password }) {
     try {
-        const { name, email, password, profile_picture } = userData;
-
         const [result] = await pool.execute(
-            `INSERT INTO users (name, email, password, profile_picture)
-             VALUES (?, ?, ?, ?)`,
-            [name, email, password, profile_picture || null]
+            `INSERT INTO users (name, email, password) VALUES (?, ?, ?)`,
+            [name, email, password]
         );
-
         return result.insertId;
     } catch (error) {
         logger.error(`Error in createUser: ${error.message}`);
@@ -20,45 +16,23 @@ async function createUser(userData) {
 
 async function findUserByEmail(email) {
     try {
-        const [rows] = await pool.execute(
-            `SELECT id, name, email, password, profile_picture, created_at, updated_at
-             FROM users
-             WHERE email = ?`,
-            [email]
-        );
+        const [rows] = await pool.execute("SELECT * FROM users WHERE email = ?", [email]);
         return rows[0] || null;
     } catch (error) {
-        logger.error(`Error in findUserByEmail for email ${email}: ${error.message}`);
+        logger.error(`Error in findUserByEmail: ${error.message}`);
         throw error;
     }
 }
 
-async function getUserById(userId) {
+async function findUserById(userId) {
     try {
         const [rows] = await pool.execute(
-            `SELECT id, name, email, profile_picture, created_at, updated_at
-             FROM users
-             WHERE id = ?`,
+            `SELECT * FROM users WHERE id = ?`,
             [userId]
         );
         return rows[0] || null;
     } catch (error) {
-        logger.error(`Error in getUserById for userId ${userId}: ${error.message}`);
-        throw error;
-    }
-}
-
-async function getUserWithPasswordById(userId) {
-    try {
-        const [rows] = await pool.execute(
-            `SELECT id, name, email, password, profile_picture, created_at, updated_at
-             FROM users
-             WHERE id = ?`,
-            [userId]
-        );
-        return rows[0] || null;
-    } catch (error) {
-        logger.error(`Error in getUserWithPasswordById for userId ${userId}: ${error.message}`);
+        logger.error(`Error in findUserById for userId ${userId}: ${error.message}`);
         throw error;
     }
 }
@@ -66,26 +40,24 @@ async function getUserWithPasswordById(userId) {
 async function updateUserProfile(userId, { name, profile_picture }) {
     try {
         const [result] = await pool.execute(
-            `UPDATE users
-             SET name = COALESCE(?, name),
-                 profile_picture = COALESCE(?, profile_picture)
+            `UPDATE users 
+             SET name = COALESCE(?, name), 
+                 profile_picture = COALESCE(?, profile_picture) 
              WHERE id = ?`,
             [name !== undefined ? name : null, profile_picture !== undefined ? profile_picture : null, userId]
         );
         return result.affectedRows;
     } catch (error) {
-        logger.error(`Error in updateUserProfile for userId ${userId}: ${error.message}`);
+        logger.error(`Error in updateUserProfile: ${error.message}`);
         throw error;
     }
 }
 
-async function updateUserPassword(userId, newHashedPassword) {
+async function updateUserPassword(userId, hashedPassword) {
     try {
         const [result] = await pool.execute(
-            `UPDATE users
-             SET password = ?
-             WHERE id = ?`,
-            [newHashedPassword, userId]
+            `UPDATE users SET password = ? WHERE id = ?`,
+            [hashedPassword, userId]
         );
         return result.affectedRows;
     } catch (error) {
@@ -94,28 +66,34 @@ async function updateUserPassword(userId, newHashedPassword) {
     }
 }
 
-async function deleteUser(id) {
+async function deleteUser(userId) {
     try {
         const [result] = await pool.execute(
             `DELETE FROM users WHERE id = ?`,
-            [id]
+            [userId]
         );
         return result.affectedRows;
     } catch (error) {
-        logger.error(`Error in deleteUser for id ${id}: ${error.message}`);
+        logger.error(`Error in deleteUser for userId ${userId}: ${error.message}`);
         throw error;
     }
+}
+
+async function updateUser(userId, data) {
+    return await updateUserProfile(userId, data);
+}
+
+async function updatePassword(userId, hashedPassword) {
+    return await updateUserPassword(userId, hashedPassword);
 }
 
 module.exports = {
     createUser,
     findUserByEmail,
-    findUserById: getUserWithPasswordById,
-    updateUser: updateUserProfile,
-    updatePassword: updateUserPassword,
-    deleteUser,
-    getUserById,
-    getUserWithPasswordById,
+    findUserById,
     updateUserProfile,
-    updateUserPassword
+    updateUserPassword,
+    deleteUser,
+    updateUser,
+    updatePassword
 };

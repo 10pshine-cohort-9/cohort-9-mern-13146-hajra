@@ -20,9 +20,12 @@ function authenticateToken(req, res, next) {
             });
         }
 
-        const secret = process.env.JWT_SECRET || "defaultsecret";
-        const decoded = jwt.verify(token, secret);
+        const secret = process.env.JWT_SECRET || (process.env.NODE_ENV === "test" ? "testsecret" : null);
+        if (!secret) {
+            throw new Error("JWT_SECRET configuration is missing");
+        }
 
+        const decoded = jwt.verify(token, secret);
         const userId = decoded.id || decoded.userId;
 
         if (!userId) {

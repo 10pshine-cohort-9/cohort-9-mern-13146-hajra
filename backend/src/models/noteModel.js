@@ -204,19 +204,20 @@ async function searchNotes(userId, { q, pinned, archived, sort }) {
             params.push(archived === "true" || archived === "1" || archived === true ? 1 : 0);
         }
 
-        const sortMap = {
-            "title_asc": "title ASC",
-            "title_desc": "title DESC",
-            "oldest": "created_at ASC",
-            "created_asc": "created_at ASC",
-            "newest": "created_at DESC",
-            "created_desc": "created_at DESC",
-            "updated_asc": "updated_at ASC",
-            "updated_desc": "updated_at DESC"
-        };
+   const sortMap = {
+    "title_asc": "title ASC",
+    "title_desc": "title DESC",
+    "oldest": "created_at ASC",
+    "created_asc": "created_at ASC",
+    "newest": "created_at DESC",
+    "created_desc": "created_at DESC",
+    "updated_asc": "updated_at ASC",
+    "updated_desc": "updated_at DESC"
+};
 
-        const sortClause = sortMap[sort] || "updated_at DESC";
-        querySql += ` ORDER BY ${sortClause}`;
+const hasOwnSort = Object.prototype.hasOwnProperty.call(sortMap, sort);
+const sortClause = hasOwnSort ? sortMap[sort] : "updated_at DESC";
+querySql += ` ORDER BY ${sortClause}`;
 
         const [rows] = await pool.execute(querySql, params);
         return rows;

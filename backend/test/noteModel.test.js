@@ -371,9 +371,7 @@ it("should not allow a user to delete another user's note", async () => {
         expect(unpinnedNote.is_pinned).to.equal(0);
     });
 
-    // --------------------------------------------------
-    // PINNED NOTES
-    // --------------------------------------------------
+    
 
     it("should get only pinned notes", async () => {
         const testUser = {
@@ -471,9 +469,7 @@ it("should not allow a user to delete another user's note", async () => {
         expect(unarchivedNote.is_archived).to.equal(0);
     });
 
-    // --------------------------------------------------
-    // ARCHIVED NOTES
-    // --------------------------------------------------
+
 
     it("should get only archived notes", async () => {
         const testUser = {
@@ -518,9 +514,7 @@ it("should not allow a user to delete another user's note", async () => {
         expect(archivedNotes[0].is_archived).to.equal(1);
     });
 
-    // --------------------------------------------------
-    // TIMESTAMPS
-    // --------------------------------------------------
+
 
     it("should create timestamps for a note", async () => {
         const testUser = {
@@ -549,10 +543,7 @@ it("should not allow a user to delete another user's note", async () => {
         expect(note.updated_at).to.not.be.null;
     });
 
-    // --------------------------------------------------
-    // USER ISOLATION FOR PINNING
-    // --------------------------------------------------
-
+   
     it("should not allow a user to pin another user's note", async () => {
         const firstUser = {
             name: "Pin Owner",

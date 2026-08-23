@@ -1,22 +1,14 @@
 const logger = require("../logger/logger");
 
-function errorMiddleware(error, req, res, next) {
-    logger.error(
-        {
-            err: error,
-            method: req.method,
-            url: req.originalUrl
-        },
-        "Unhandled application error"
-    );
+function errorMiddleware(err, req, res, next) {
+    logger.error(err.stack || err.message);
 
-    if (res.headersSent) {
-        return next(error);
-    }
+    const statusCode = err.statusCode || 500;
+    const message = err.message || "Internal Server Error";
 
-    return res.status(500).json({
+    res.status(statusCode).json({
         success: false,
-        message: "Internal server error"
+        message
     });
 }
 
