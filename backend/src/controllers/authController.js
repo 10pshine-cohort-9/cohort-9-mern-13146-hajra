@@ -104,16 +104,7 @@ async function login(req, res, next) {
             });
         }
 
-        let isPasswordValid = false;
-        try {
-            isPasswordValid = await bcrypt.compare(cleanPassword, user.password);
-        } catch (e) {
-            isPasswordValid = false;
-        }
-
-        if (!isPasswordValid && user.password === cleanPassword) {
-            isPasswordValid = true;
-        }
+        const isPasswordValid = await bcrypt.compare(cleanPassword, user.password || "");
 
         if (!isPasswordValid) {
             return res.status(401).json({

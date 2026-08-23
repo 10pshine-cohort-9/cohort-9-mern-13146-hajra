@@ -11,7 +11,7 @@ const {
     toggleArchive,
     getPinnedNotes,
     getArchivedNotes,
-    searchNotes // Destructured searchNotes controller
+    searchNotes
 } = require("../controllers/noteController");
 
 const router = express.Router();
@@ -22,7 +22,7 @@ router.post("/", createNote);
 router.get("/", getNotes);
 router.get("/pinned", getPinnedNotes);
 router.get("/archived", getArchivedNotes);
-router.get("/search", searchNotes); // Fixed: using destructured function
+router.get("/search", searchNotes);
 router.get("/:id", getNoteById);
 router.put("/:id", updateNote);
 router.delete("/:id", deleteNote);

@@ -1,10 +1,11 @@
-const bcrypt = require("bcryptjs");
 const userModel = require("../models/userModel");
+const bcrypt = require("bcryptjs");
 
 async function getUserProfile(req, res, next) {
     try {
-        const userId = req.user.id;
-        const user = await userModel.findUserById(userId);
+        const userId = req.user?.id || req.user?.user_id;
+        const getUser = userModel.findUserById || userModel.getUserById;
+        const user = await getUser(userId);
 
         if (!user) {
             return res.status(404).json({
@@ -13,42 +14,58 @@ async function getUserProfile(req, res, next) {
             });
         }
 
-        delete user.password;
-
+        const { password, ...userWithoutPassword } = user;
         return res.status(200).json({
             success: true,
-            data: user
+            data: userWithoutPassword
         });
     } catch (error) {
         next(error);
     }
 }
 
-async function updateProfile(req, res, next) {
+async function updateUserProfile(req, res, next) {
     try {
-        const userId = req.user.id;
+        const userId = req.user?.id || req.user?.user_id;
+        const { name, profile_picture } = req.body || {};
+
+        if (name !== undefined) {
+            if (typeof name !== "string" || name.trim() === "") {
+                return res.status(400).json({
+                    success: false,
+                    message: "Name must be a non-empty string"
+                });
+            }
+        }
+
+        if (profile_picture !== undefined && profile_picture !== null) {
+            if (typeof profile_picture !== "string") {
+                return res.status(400).json({
+                    success: false,
+                    message: "Profile picture must be a string"
+                });
+            }
+        }
+
+        // Fixed: Safely treat null or non-strings without crashing .trim()
+        const updatePayload = {
+            name: name !== undefined ? name.trim() : undefined,
+            profile_picture: (profile_picture !== undefined && profile_picture !== null)
+                ? profile_picture.trim()
+                : profile_picture
+        };
+
+        await userModel.updateUserProfile(userId, updatePayload);
+
         const getUser = userModel.findUserById || userModel.getUserById;
-        const existingUser = await getUser(userId);
-
-        if (!existingUser) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found"
-            });
-        }
-
-        const { name, profile_picture } = req.body;
-        await userModel.updateUserProfile(userId, { name, profile_picture });
-
         const updatedUser = await getUser(userId);
-        if (updatedUser && updatedUser.password) {
-            delete updatedUser.password;
-        }
+
+        const { password, ...userWithoutPassword } = updatedUser || {};
 
         return res.status(200).json({
             success: true,
             message: "Profile updated successfully",
-            data: updatedUser
+            data: userWithoutPassword
         });
     } catch (error) {
         next(error);
@@ -57,20 +74,27 @@ async function updateProfile(req, res, next) {
 
 async function changePassword(req, res, next) {
     try {
-        const userId = req.user.id;
-        const { currentPassword, newPassword, oldPassword } = req.body || {};
+        const userId = req.user?.id || req.user?.user_id;
+        const { currentPassword, oldPassword, newPassword } = req.body || {};
+        const inputCurrentPassword = currentPassword || oldPassword;
 
-        const existingPassword = currentPassword || oldPassword;
-
-        if (!existingPassword || !newPassword) {
+        if (!inputCurrentPassword || !newPassword) {
             return res.status(400).json({
                 success: false,
-                message: "Current password and new password are required"
+                message: "Both currentPassword and newPassword are required"
+            });
+        }
+
+        if (typeof newPassword !== "string" || newPassword.length < 6) {
+            return res.status(400).json({
+                success: false,
+                message: "New password must be at least 6 characters long"
             });
         }
 
         const getUser = userModel.findUserById || userModel.getUserById;
         const user = await getUser(userId);
+
         if (!user) {
             return res.status(404).json({
                 success: false,
@@ -78,7 +102,7 @@ async function changePassword(req, res, next) {
             });
         }
 
-        const isMatch = await bcrypt.compare(String(existingPassword), user.password);
+        const isMatch = await bcrypt.compare(String(inputCurrentPassword), user.password || "");
         if (!isMatch) {
             return res.status(400).json({
                 success: false,
@@ -86,12 +110,13 @@ async function changePassword(req, res, next) {
             });
         }
 
-        const hashedNewPassword = await bcrypt.hash(String(newPassword), 10);
-        await userModel.updateUserPassword(userId, hashedNewPassword);
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        const updatePass = userModel.updateUserPassword || userModel.updatePassword;
+        await updatePass(userId, hashedPassword);
 
         return res.status(200).json({
             success: true,
-            message: "Password updated successfully"
+            message: "Password changed successfully"
         });
     } catch (error) {
         next(error);
@@ -100,7 +125,8 @@ async function changePassword(req, res, next) {
 
 module.exports = {
     getUserProfile,
-    updateProfile,
-    updateUserProfile: updateProfile,
+    getProfile: getUserProfile,
+    updateUserProfile,
+    updateProfile: updateUserProfile,
     changePassword
 };

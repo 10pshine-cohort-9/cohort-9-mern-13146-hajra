@@ -1,44 +1,43 @@
 const noteModel = require("../models/noteModel");
 
-exports.createNote = async (req, res, next) => {
+async function createNote(req, res, next) {
     try {
-        const { title, content } = req.body;
+        const { title, content } = req.body || {};
 
-        if (
-            typeof title !== "string" ||
-            title.trim() === "" ||
-            title.length > 255 ||
-            typeof content !== "string" ||
-            content.trim() === "" ||
-            content.length > 10000
-        ) {
+        if (!title || typeof title !== "string" || !title.trim()) {
             return res.status(400).json({
                 success: false,
-                message: "Title (max 255 chars) and content (max 10000 chars) are required"
+                message: "Title is required"
             });
         }
 
-        const noteId = await noteModel.createNote({
-            user_id: req.user.id,
-            title: title.trim(),
-            content: content.trim()
-        });
+        const userId = req.user?.id || req.user?.user_id;
 
-        const newNote = await noteModel.getNoteById(noteId, req.user.id);
+        // noteModel requires both title and content to be non-empty strings
+        const noteData = {
+            user_id: userId,
+            title: title.trim(),
+            content: (typeof content === "string" && content.trim() !== "") ? content.trim() : " "
+        };
+
+        const insertId = await noteModel.createNote(noteData);
+        const createdNote = await noteModel.getNoteById(insertId, userId);
 
         return res.status(201).json({
             success: true,
             message: "Note created successfully",
-            data: newNote
+            data: createdNote || { id: insertId, ...noteData }
         });
     } catch (error) {
         next(error);
     }
-};
+}
 
-exports.getNotes = async (req, res, next) => {
+async function getNotes(req, res, next) {
     try {
-        const notes = await noteModel.getNotesByUser(req.user.id);
+        const userId = req.user?.id || req.user?.user_id;
+        const notes = await noteModel.getNotesByUser(userId);
+
         return res.status(200).json({
             success: true,
             data: notes
@@ -46,12 +45,14 @@ exports.getNotes = async (req, res, next) => {
     } catch (error) {
         next(error);
     }
-};
+}
 
-exports.getNoteById = async (req, res, next) => {
+async function getNoteById(req, res, next) {
     try {
         const { id } = req.params;
-        const note = await noteModel.getNoteById(id, req.user.id);
+        const userId = req.user?.id || req.user?.user_id;
+
+        const note = await noteModel.getNoteById(id, userId);
 
         if (!note) {
             return res.status(404).json({
@@ -67,63 +68,87 @@ exports.getNoteById = async (req, res, next) => {
     } catch (error) {
         next(error);
     }
-};
+}
 
-exports.updateNote = async (req, res, next) => {
+async function updateNote(req, res, next) {
     try {
         const { id } = req.params;
-        const { title, content, is_pinned, is_archived } = req.body;
+        const userId = req.user?.id || req.user?.user_id;
 
-        const note = await noteModel.getNoteById(id, req.user.id);
-        if (!note) {
+        const existingNote = await noteModel.getNoteById(id, userId);
+        if (!existingNote) {
             return res.status(404).json({
                 success: false,
                 message: "Note not found"
             });
         }
 
-        if (
-            (title !== undefined && (typeof title !== "string" || title.trim() === "" || title.length > 255)) ||
-            (content !== undefined && (typeof content !== "string" || content.trim() === "" || content.length > 10000))
-        ) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid title or content input"
-            });
+        const { title, content, is_pinned, is_archived } = req.body || {};
+
+        // Validate is_pinned if provided
+        let normalizedPinned = undefined;
+        if (is_pinned !== undefined) {
+            if (typeof is_pinned === "boolean") {
+                normalizedPinned = is_pinned ? 1 : 0;
+            } else if (is_pinned === 0 || is_pinned === 1) {
+                normalizedPinned = is_pinned;
+            } else {
+                return res.status(400).json({
+                    success: false,
+                    message: "is_pinned must be a boolean or 0/1"
+                });
+            }
         }
 
-await noteModel.updateNote(id, req.user.id, {
-    title: title !== undefined ? title.trim() : undefined,
-    content: content !== undefined ? content.trim() : undefined,
-    is_pinned: is_pinned !== undefined ? is_pinned : undefined,
-    is_archived: is_archived !== undefined ? is_archived : undefined
-});
+        // Validate is_archived if provided
+        let normalizedArchived = undefined;
+        if (is_archived !== undefined) {
+            if (typeof is_archived === "boolean") {
+                normalizedArchived = is_archived ? 1 : 0;
+            } else if (is_archived === 0 || is_archived === 1) {
+                normalizedArchived = is_archived;
+            } else {
+                return res.status(400).json({
+                    success: false,
+                    message: "is_archived must be a boolean or 0/1"
+                });
+            }
+        }
 
-        const updatedNote = await noteModel.getNoteById(id, req.user.id);
+        const updateData = {
+            title: title !== undefined ? title : existingNote.title,
+            content: content !== undefined ? content : existingNote.content,
+            is_pinned: normalizedPinned !== undefined ? normalizedPinned : existingNote.is_pinned,
+            is_archived: normalizedArchived !== undefined ? normalizedArchived : existingNote.is_archived
+        };
+
+        await noteModel.updateNote(id, userId, updateData);
+        const updatedNote = await noteModel.getNoteById(id, userId);
 
         return res.status(200).json({
             success: true,
             message: "Note updated successfully",
-            data: updatedNote
+            data: updatedNote || { id: Number(id), user_id: userId, ...updateData }
         });
     } catch (error) {
         next(error);
     }
-};
+}
 
-exports.deleteNote = async (req, res, next) => {
+async function deleteNote(req, res, next) {
     try {
         const { id } = req.params;
-        const note = await noteModel.getNoteById(id, req.user.id);
+        const userId = req.user?.id || req.user?.user_id;
 
-        if (!note) {
+        const existingNote = await noteModel.getNoteById(id, userId);
+        if (!existingNote) {
             return res.status(404).json({
                 success: false,
                 message: "Note not found"
             });
         }
 
-        await noteModel.deleteNote(id, req.user.id);
+        await noteModel.deleteNote(id, userId);
 
         return res.status(200).json({
             success: true,
@@ -132,92 +157,105 @@ exports.deleteNote = async (req, res, next) => {
     } catch (error) {
         next(error);
     }
-};
+}
 
-exports.togglePin = async (req, res, next) => {
+async function togglePin(req, res, next) {
     try {
         const { id } = req.params;
+        const userId = req.user?.id || req.user?.user_id;
+        const { is_pinned } = req.body || {};
 
-        const affectedRows = await noteModel.togglePin(id, req.user.id);
-        if (!affectedRows) {
-            return res.status(404).json({
-                success: false,
-                message: "Note not found"
-            });
+        const affectedRows = await noteModel.togglePin(id, userId, is_pinned);
+        if (affectedRows === 0) {
+            return res.status(404).json({ success: false, message: "Note not found" });
         }
 
-        const updatedNote = await noteModel.getNoteById(id, req.user.id);
-
-        return res.status(200).json({
-            success: true,
-            message: `Note ${updatedNote.is_pinned ? "pinned" : "unpinned"} successfully`,
-            data: updatedNote
-        });
+        const updatedNote = await noteModel.getNoteById(id, userId);
+        return res.status(200).json({ success: true, data: updatedNote });
     } catch (error) {
         next(error);
     }
-};
+}
 
-exports.toggleArchive = async (req, res, next) => {
+async function toggleArchive(req, res, next) {
     try {
         const { id } = req.params;
+        const userId = req.user?.id || req.user?.user_id;
+        const { is_archived } = req.body || {};
 
-        const affectedRows = await noteModel.toggleArchive(id, req.user.id);
-        if (!affectedRows) {
-            return res.status(404).json({
-                success: false,
-                message: "Note not found"
-            });
+        const affectedRows = await noteModel.toggleArchive(id, userId, is_archived);
+        if (affectedRows === 0) {
+            return res.status(404).json({ success: false, message: "Note not found" });
         }
 
-        const updatedNote = await noteModel.getNoteById(id, req.user.id);
+        const updatedNote = await noteModel.getNoteById(id, userId);
+        return res.status(200).json({ success: true, data: updatedNote });
+    } catch (error) {
+        next(error);
+    }
+}
+
+async function getPinnedNotes(req, res, next) {
+    try {
+        const userId = req.user?.id || req.user?.user_id;
+        const notes = await noteModel.getPinnedNotes(userId);
 
         return res.status(200).json({
             success: true,
-            message: `Note ${updatedNote.is_archived ? "archived" : "unarchived"} successfully`,
-            data: updatedNote
-        });
-    } catch (error) {
-        next(error);
-    }
-};
-
-exports.getPinnedNotes = async (req, res, next) => {
-    try {
-        const notes = await noteModel.getPinnedNotes(req.user.id);
-        return res.status(200).json({ success: true, data: notes });
-    } catch (error) {
-        next(error);
-    }
-};
-
-exports.getArchivedNotes = async (req, res, next) => {
-    try {
-        const notes = await noteModel.getArchivedNotes(req.user.id);
-        return res.status(200).json({ success: true, data: notes });
-    } catch (error) {
-        next(error);
-    }
-};
-
-
-exports.searchNotes = async (req, res, next) => {
-    try {
-        const { q, pinned, archived, sort } = req.query;
-
-        const notes = await noteModel.searchNotes(req.user.id, {
-            q,
-            pinned,
-            archived,
-            sort
-        });
-
-        return res.status(200).json({
-            success: true,
-            count: notes.length,
             data: notes
         });
     } catch (error) {
         next(error);
     }
+}
+
+async function getArchivedNotes(req, res, next) {
+    try {
+        const userId = req.user?.id || req.user?.user_id;
+        const notes = await noteModel.getArchivedNotes(userId);
+
+        return res.status(200).json({
+            success: true,
+            data: notes
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+async function searchNotes(req, res, next) {
+    try {
+        const userId = req.user?.id || req.user?.user_id;
+        const { q, search, is_pinned, pinned, is_archived, archived, sort } = req.query || {};
+
+        // Map request queries directly to noteModel.searchNotes parameters
+        const searchOptions = {
+            q: q || search || "",
+            pinned: pinned !== undefined ? pinned : is_pinned,
+            archived: archived !== undefined ? archived : is_archived,
+            sort
+        };
+
+        const notes = await noteModel.searchNotes(userId, searchOptions);
+
+        return res.status(200).json({
+            success: true,
+            data: notes
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+module.exports = {
+    createNote,
+    getNotes,
+    getNoteById,
+    updateNote,
+    deleteNote,
+    togglePin,
+    toggleArchive,
+    getPinnedNotes,
+    getArchivedNotes,
+    searchNotes
 };
