@@ -25,6 +25,14 @@ async function register(req, res, next) {
             });
         }
 
+        // FIX 1: Enforce minimum length and string type for password
+        if (typeof password !== "string" || password.length < 6) {
+            return res.status(400).json({
+                success: false,
+                message: "Password must be at least 6 characters long"
+            });
+        }
+
         const emailStr = String(email).trim().toLowerCase();
 
         if (!EMAIL_REGEX.test(emailStr)) {
@@ -43,11 +51,24 @@ async function register(req, res, next) {
         }
 
         const hashedPassword = await bcrypt.hash(String(password), 10);
-        const userId = await userModel.createUser({
-            name: String(name).trim(),
-            email: emailStr,
-            password: hashedPassword
-        });
+        let userId;
+
+        // FIX 2: Catch ER_DUP_ENTRY on race conditions and return HTTP 409
+        try {
+            userId = await userModel.createUser({
+                name: String(name).trim(),
+                email: emailStr,
+                password: hashedPassword
+            });
+        } catch (dbError) {
+            if (dbError.code === "ER_DUP_ENTRY") {
+                return res.status(409).json({
+                    success: false,
+                    message: "User with this email already exists"
+                });
+            }
+            throw dbError;
+        }
 
         const token = jwt.sign({ id: userId }, getJwtSecret(), { expiresIn: "24h" });
 

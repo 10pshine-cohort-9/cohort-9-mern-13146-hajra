@@ -1,5 +1,13 @@
 const noteModel = require("../models/noteModel");
 
+// Helper to normalize and validate boolean/numeric flag inputs (0, 1, true, false, "true", "false")
+function parseBooleanFlag(val) {
+    if (typeof val === "boolean") return val ? 1 : 0;
+    if (val === 1 || val === "1" || val === "true") return 1;
+    if (val === 0 || val === "0" || val === "false") return 0;
+    return null;
+}
+
 async function createNote(req, res, next) {
     try {
         const { title, content } = req.body || {};
@@ -13,11 +21,13 @@ async function createNote(req, res, next) {
 
         const userId = req.user?.id || req.user?.user_id;
 
-        // noteModel requires both title and content to be non-empty strings
+        // FIX 1: Validate content properly without passing whitespace fallback
+        const formattedContent = (typeof content === "string") ? content.trim() : "";
+
         const noteData = {
             user_id: userId,
             title: title.trim(),
-            content: (typeof content === "string" && content.trim() !== "") ? content.trim() : " "
+            content: formattedContent
         };
 
         const insertId = await noteModel.createNote(noteData);
@@ -85,14 +95,33 @@ async function updateNote(req, res, next) {
 
         const { title, content, is_pinned, is_archived } = req.body || {};
 
-        // Validate is_pinned if provided
+        // FIX 2: Validate provided title and content strings
+        let updatedTitle = existingNote.title;
+        if (title !== undefined) {
+            if (typeof title !== "string" || !title.trim()) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Title cannot be empty"
+                });
+            }
+            updatedTitle = title.trim();
+        }
+
+        let updatedContent = existingNote.content;
+        if (content !== undefined) {
+            if (typeof content !== "string") {
+                return res.status(400).json({
+                    success: false,
+                    message: "Content must be a string"
+                });
+            }
+            updatedContent = content.trim();
+        }
+
         let normalizedPinned = undefined;
         if (is_pinned !== undefined) {
-            if (typeof is_pinned === "boolean") {
-                normalizedPinned = is_pinned ? 1 : 0;
-            } else if (is_pinned === 0 || is_pinned === 1) {
-                normalizedPinned = is_pinned;
-            } else {
+            normalizedPinned = parseBooleanFlag(is_pinned);
+            if (normalizedPinned === null) {
                 return res.status(400).json({
                     success: false,
                     message: "is_pinned must be a boolean or 0/1"
@@ -100,14 +129,10 @@ async function updateNote(req, res, next) {
             }
         }
 
-        // Validate is_archived if provided
         let normalizedArchived = undefined;
         if (is_archived !== undefined) {
-            if (typeof is_archived === "boolean") {
-                normalizedArchived = is_archived ? 1 : 0;
-            } else if (is_archived === 0 || is_archived === 1) {
-                normalizedArchived = is_archived;
-            } else {
+            normalizedArchived = parseBooleanFlag(is_archived);
+            if (normalizedArchived === null) {
                 return res.status(400).json({
                     success: false,
                     message: "is_archived must be a boolean or 0/1"
@@ -116,8 +141,8 @@ async function updateNote(req, res, next) {
         }
 
         const updateData = {
-            title: title !== undefined ? title : existingNote.title,
-            content: content !== undefined ? content : existingNote.content,
+            title: updatedTitle,
+            content: updatedContent,
             is_pinned: normalizedPinned !== undefined ? normalizedPinned : existingNote.is_pinned,
             is_archived: normalizedArchived !== undefined ? normalizedArchived : existingNote.is_archived
         };
@@ -165,7 +190,16 @@ async function togglePin(req, res, next) {
         const userId = req.user?.id || req.user?.user_id;
         const { is_pinned } = req.body || {};
 
-        const affectedRows = await noteModel.togglePin(id, userId, is_pinned);
+        // FIX 3: Validate and normalize state before calling model
+        const normalizedPinned = parseBooleanFlag(is_pinned);
+        if (normalizedPinned === null) {
+            return res.status(400).json({
+                success: false,
+                message: "is_pinned must be a boolean or 0/1"
+            });
+        }
+
+        const affectedRows = await noteModel.togglePin(id, userId, normalizedPinned);
         if (affectedRows === 0) {
             return res.status(404).json({ success: false, message: "Note not found" });
         }
@@ -183,7 +217,16 @@ async function toggleArchive(req, res, next) {
         const userId = req.user?.id || req.user?.user_id;
         const { is_archived } = req.body || {};
 
-        const affectedRows = await noteModel.toggleArchive(id, userId, is_archived);
+        // FIX 3: Validate and normalize state before calling model
+        const normalizedArchived = parseBooleanFlag(is_archived);
+        if (normalizedArchived === null) {
+            return res.status(400).json({
+                success: false,
+                message: "is_archived must be a boolean or 0/1"
+            });
+        }
+
+        const affectedRows = await noteModel.toggleArchive(id, userId, normalizedArchived);
         if (affectedRows === 0) {
             return res.status(404).json({ success: false, message: "Note not found" });
         }
@@ -228,7 +271,6 @@ async function searchNotes(req, res, next) {
         const userId = req.user?.id || req.user?.user_id;
         const { q, search, is_pinned, pinned, is_archived, archived, sort } = req.query || {};
 
-        // Map request queries directly to noteModel.searchNotes parameters
         const searchOptions = {
             q: q || search || "",
             pinned: pinned !== undefined ? pinned : is_pinned,
@@ -238,8 +280,10 @@ async function searchNotes(req, res, next) {
 
         const notes = await noteModel.searchNotes(userId, searchOptions);
 
+        // FIX 4: Add count property to search response
         return res.status(200).json({
             success: true,
+            count: Array.isArray(notes) ? notes.length : 0,
             data: notes
         });
     } catch (error) {
