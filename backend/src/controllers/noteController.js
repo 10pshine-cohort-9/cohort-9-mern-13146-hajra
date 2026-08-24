@@ -1,7 +1,7 @@
 const noteModel = require("../models/noteModel");
 
-// Helper to normalize and validate boolean/numeric flag inputs (0, 1, true, false, "true", "false")
 function parseBooleanFlag(val) {
+    if (val === undefined) return undefined;
     if (typeof val === "boolean") return val ? 1 : 0;
     if (val === 1 || val === "1" || val === "true") return 1;
     if (val === 0 || val === "0" || val === "false") return 0;
@@ -21,7 +21,6 @@ async function createNote(req, res, next) {
 
         const userId = req.user?.id || req.user?.user_id;
 
-        // FIX 1: Validate content properly without passing whitespace fallback
         const formattedContent = (typeof content === "string") ? content.trim() : "";
 
         const noteData = {
@@ -95,7 +94,6 @@ async function updateNote(req, res, next) {
 
         const { title, content, is_pinned, is_archived } = req.body || {};
 
-        // FIX 2: Validate provided title and content strings
         let updatedTitle = existingNote.title;
         if (title !== undefined) {
             if (typeof title !== "string" || !title.trim()) {
@@ -190,9 +188,9 @@ async function togglePin(req, res, next) {
         const userId = req.user?.id || req.user?.user_id;
         const { is_pinned } = req.body || {};
 
-        // FIX 3: Validate and normalize state before calling model
         const normalizedPinned = parseBooleanFlag(is_pinned);
-        if (normalizedPinned === null) {
+        
+        if (is_pinned !== undefined && normalizedPinned === null) {
             return res.status(400).json({
                 success: false,
                 message: "is_pinned must be a boolean or 0/1"
@@ -217,9 +215,9 @@ async function toggleArchive(req, res, next) {
         const userId = req.user?.id || req.user?.user_id;
         const { is_archived } = req.body || {};
 
-        // FIX 3: Validate and normalize state before calling model
         const normalizedArchived = parseBooleanFlag(is_archived);
-        if (normalizedArchived === null) {
+        
+        if (is_archived !== undefined && normalizedArchived === null) {
             return res.status(400).json({
                 success: false,
                 message: "is_archived must be a boolean or 0/1"
@@ -280,7 +278,6 @@ async function searchNotes(req, res, next) {
 
         const notes = await noteModel.searchNotes(userId, searchOptions);
 
-        // FIX 4: Add count property to search response
         return res.status(200).json({
             success: true,
             count: Array.isArray(notes) ? notes.length : 0,
