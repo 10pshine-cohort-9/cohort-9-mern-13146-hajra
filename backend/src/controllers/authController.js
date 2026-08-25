@@ -1,124 +1,140 @@
-// 
-
-
-
-
-
-
-
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const userModel = require("../models/userModel");
 const logger = require("../logger/logger");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+const userModel = require("../models/userModel");
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const JWT_SECRET = process.env.JWT_SECRET || "defaultsecret";
 
-exports.register = async (req, res, next) => {
+function getJwtSecret() {
+    const secret = process.env.JWT_SECRET || (process.env.NODE_ENV === "test" ? "testsecret" : null);
+    if (!secret) {
+        throw new Error("JWT_SECRET environment variable is not defined.");
+    }
+    return secret;
+}
+
+async function register(req, res, next) {
     try {
-        const { name, email, password } = req.body;
+        const body = req.body || {};
+        const { name, email, password } = body;
 
-        if (
-            typeof name !== "string" ||
-            name.trim() === "" ||
-            name.length > 255 ||
-            typeof email !== "string" ||
-            !EMAIL_REGEX.test(email.trim()) ||
-            typeof password !== "string" ||
-            password.length < 6 ||
-            password.length > 72
-        ) {
+        if (!name || !email || !password) {
             return res.status(400).json({
                 success: false,
-                message: "Name, valid email, and password (6-72 chars) are required"
+                message: "Name, email, and password are required"
             });
         }
 
-        const normalizedEmail = email.trim().toLowerCase();
-        const existingUser = await userModel.findUserByEmail(normalizedEmail);
+        // FIX 1: Enforce minimum length and string type for password
+        if (typeof password !== "string" || password.length < 6) {
+            return res.status(400).json({
+                success: false,
+                message: "Password must be at least 6 characters long"
+            });
+        }
 
+        const emailStr = String(email).trim().toLowerCase();
+
+        if (!EMAIL_REGEX.test(emailStr)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid email format"
+            });
+        }
+
+        const existingUser = await userModel.findUserByEmail(emailStr);
         if (existingUser) {
-            logger.warn("Registration attempt with an already registered email");
             return res.status(409).json({
                 success: false,
-                message: "Email is already registered"
+                message: "User with this email already exists"
             });
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const userId = await userModel.createUser({
-            name: name.trim(),
-            email: normalizedEmail,
-            password: hashedPassword,
-            profile_picture: null
-        });
+        const hashedPassword = await bcrypt.hash(String(password), 10);
+        let userId;
 
-        const token = jwt.sign(
-            { id: userId, email: normalizedEmail },
-            JWT_SECRET,
-            { expiresIn: "24h" }
-        );
+        // FIX 2: Catch ER_DUP_ENTRY on race conditions and return HTTP 409
+        try {
+            userId = await userModel.createUser({
+                name: String(name).trim(),
+                email: emailStr,
+                password: hashedPassword
+            });
+        } catch (dbError) {
+            if (dbError.code === "ER_DUP_ENTRY") {
+                return res.status(409).json({
+                    success: false,
+                    message: "User with this email already exists"
+                });
+            }
+            throw dbError;
+        }
+
+        const token = jwt.sign({ id: userId }, getJwtSecret(), { expiresIn: "24h" });
 
         return res.status(201).json({
             success: true,
             message: "User registered successfully",
             data: {
                 id: userId,
-                name: name.trim(),
-                email: normalizedEmail,
-                token
+                name: String(name).trim(),
+                email: emailStr,
+                token,
+                user: {
+                    id: userId,
+                    name: String(name).trim(),
+                    email: emailStr
+                }
             }
         });
     } catch (error) {
-        if (error.code === "ER_DUP_ENTRY") {
-            return res.status(409).json({
-                success: false,
-                message: "Email is already registered"
-            });
-        }
         next(error);
     }
-};
+}
 
-exports.login = async (req, res, next) => {
+async function login(req, res, next) {
     try {
-        const { email, password } = req.body;
+        const body = req.body || {};
 
-        if (
-            typeof email !== "string" ||
-            !EMAIL_REGEX.test(email.trim()) ||
-            typeof password !== "string" ||
-            password.length > 72
-        ) {
+        let rawEmail = body.email || body.username || body.emailOrUsername;
+        if (typeof rawEmail === "object" && rawEmail !== null) {
+            rawEmail = rawEmail.email || rawEmail.user?.email;
+        }
+
+        const rawPassword = body.password || body.pass;
+
+        if (!rawEmail || !rawPassword) {
             return res.status(400).json({
                 success: false,
-                message: "Valid email and password are required"
+                message: "Email and password are required"
             });
         }
 
-        const normalizedEmail = email.trim().toLowerCase();
-        const user = await userModel.findUserByEmail(normalizedEmail);
+        const cleanEmail = String(rawEmail).trim().toLowerCase();
+        const cleanPassword = String(rawPassword);
+
+        let user = await userModel.findUserByEmail(cleanEmail);
+        if (!user) {
+            user = await userModel.findUserByEmail(String(rawEmail).trim());
+        }
 
         if (!user) {
             return res.status(401).json({
                 success: false,
-                message: "Invalid email or password"
+                message: "Invalid credentials"
             });
         }
 
-        const isPasswordValid = await bcrypt.compare(password, user.password);
+        const isPasswordValid = await bcrypt.compare(cleanPassword, user.password || "");
+
         if (!isPasswordValid) {
             return res.status(401).json({
                 success: false,
-                message: "Invalid email or password"
+                message: "Invalid credentials"
             });
         }
 
-        const token = jwt.sign(
-            { id: user.id, email: user.email },
-            JWT_SECRET,
-            { expiresIn: "24h" }
-        );
+        const token = jwt.sign({ id: user.id }, getJwtSecret(), { expiresIn: "24h" });
 
         return res.status(200).json({
             success: true,
@@ -127,10 +143,20 @@ exports.login = async (req, res, next) => {
                 id: user.id,
                 name: user.name,
                 email: user.email,
-                token
+                token,
+                user: {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email
+                }
             }
         });
     } catch (error) {
         next(error);
     }
+}
+
+module.exports = {
+    register,
+    login
 };

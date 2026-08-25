@@ -7,7 +7,7 @@ const router = express.Router();
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 20,
-    skip: () => process.env.NODE_ENV === "test", // Bypass during npm test
+    skip: () => process.env.NODE_ENV === "test",
     message: {
         success: false,
         message: "Too many requests, please try again later."

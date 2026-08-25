@@ -1,4 +1,5 @@
 process.env.NODE_ENV = "test";
+process.env.JWT_SECRET = "testsecret";
 
 const request = require("supertest");
 const { expect } = require("chai");
@@ -148,23 +149,12 @@ describe("API Integration Tests", () => {
             noteId = response.body.data.id;
         });
 
-        // it("should get all notes for the authenticated user", async () => {
-        //     const response = await request(app)
-        //         .get("/api/notes")
-        //         .set("Authorization", `Bearer ${tokenOne}`);
-
-        //     expect(response.status).to.equal(200);
-        //     expect(response.body.success).to.equal(true);
-        //     expect(response.body.data).to.be.an("array");
-        // });
-
 
         it("should get all notes for the authenticated user", async () => {
     const response = await request(app)
         .get("/api/notes")
         .set("Authorization", `Bearer ${tokenOne}`);
 
-    // LOG ERROR PAYLOAD IF NOT 200:
     if (response.status !== 200) {
         console.log("GET /api/notes ERROR BODY:", response.body);
     }
@@ -182,18 +172,6 @@ describe("API Integration Tests", () => {
             expect(response.status).to.equal(404);
         });
 
-        // it("should update a note owned by user", async () => {
-        //     const response = await request(app)
-        //         .put(`/api/notes/${noteId}`)
-        //         .set("Authorization", `Bearer ${tokenOne}`)
-        //         .send({
-        //             title: "Updated Title",
-        //             is_pinned: 1
-        //         });
-
-        //     expect(response.status).to.equal(200);
-        //     expect(response.body.data.title).to.equal("Updated Title");
-        // });
 
 it("should update a note owned by user", async () => {
     try {
