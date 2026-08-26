@@ -7,6 +7,7 @@ import Dashboard from "../pages/Dashboard";
 import Profile from "../pages/Profile";
 import NotFound from "../pages/NotFound";
 import Loader from "../components/common/Loader";
+import ProtectedRoute from "../components/ProtectedRoute";
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();

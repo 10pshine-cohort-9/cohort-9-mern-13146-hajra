@@ -22,11 +22,12 @@ function PasswordField({ label = "Password", id, ...props }) {
           className="w-full bg-transparent px-4 py-3 pr-12 text-base text-gray-800 border-none outline-none focus:outline-none focus:ring-0 shadow-none"
           {...props}
         />
-        <button
+       <button
           type="button"
           onClick={() => setShowPassword(!showPassword)}
           className="absolute right-4 top-1/2 -translate-y-1/2 text-[#5A55A3] hover:text-[#3F3A85] focus:outline-none border-none bg-transparent cursor-pointer flex items-center justify-center p-0 m-0 z-10"
           tabIndex={-1}
+          aria-label={showPassword ? "Hide password" : "Show password"}
         >
           {showPassword ? <FaEyeSlash className="text-lg" /> : <FaEye className="text-lg" />}
         </button>

@@ -35,7 +35,7 @@ describe("Signup Page Component", () => {
     expect(screen.getByRole("heading", { name: /create an account/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/password/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /sign up/i })).toBeInTheDocument();
   });
 
@@ -52,22 +52,24 @@ describe("Signup Page Component", () => {
     expect(mockSignup).not.toHaveBeenCalled();
   });
 
-  it("shows error when password is less than 6 characters", async () => {
-    render(
-      <MemoryRouter>
-        <Signup />
-      </MemoryRouter>
-    );
+it("shows error when password is less than 6 characters", async () => {
+  render(
+    <MemoryRouter>
+      <Signup />
+    </MemoryRouter>
+  );
 
-    fireEvent.change(screen.getByLabelText(/name/i), { target: { value: testUser.name } });
-    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: testUser.email } });
-    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: "123" } });
+  fireEvent.change(screen.getByLabelText(/name/i), { target: { value: testUser.name } });
+  fireEvent.change(screen.getByLabelText(/email/i), { target: { value: testUser.email } });
+  
+  // Use getByPlaceholderText here instead of getByLabelText:
+  fireEvent.change(screen.getByPlaceholderText(/password/i), { target: { value: "123" } });
 
-    fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
+  fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
 
-    expect(await screen.findByText("Password must be at least 6 characters long.")).toBeInTheDocument();
-    expect(mockSignup).not.toHaveBeenCalled();
-  });
+  expect(await screen.findByText("Password must be at least 6 characters long.")).toBeInTheDocument();
+  expect(mockSignup).not.toHaveBeenCalled();
+});
 
   it("navigates to dashboard on successful signup", async () => {
     mockSignup.mockResolvedValueOnce({ success: true });
@@ -80,7 +82,7 @@ describe("Signup Page Component", () => {
 
     fireEvent.change(screen.getByLabelText(/name/i), { target: { value: testUser.name } });
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: testUser.email } });
-    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: testUser.password } });
+    fireEvent.change(screen.getByPlaceholderText(/password/i), { target: { value: testUser.password } });
 
     fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
 
@@ -101,7 +103,7 @@ describe("Signup Page Component", () => {
 
     fireEvent.change(screen.getByLabelText(/name/i), { target: { value: testUser.name } });
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: testUser.email } });
-    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: testUser.password } });
+    fireEvent.change(screen.getByPlaceholderText(/password/i), { target: { value: testUser.password } });
 
     fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
 
@@ -119,7 +121,7 @@ describe("Signup Page Component", () => {
 
     fireEvent.change(screen.getByLabelText(/name/i), { target: { value: testUser.name } });
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: testUser.email } });
-    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: testUser.password } });
+    fireEvent.change(screen.getByPlaceholderText(/password/i), { target: { value: testUser.password } });
 
     fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
 
@@ -141,7 +143,7 @@ describe("Signup Page Component", () => {
 
     fireEvent.change(screen.getByLabelText(/name/i), { target: { value: testUser.name } });
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: testUser.email } });
-    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: testUser.password } });
+    fireEvent.change(screen.getByPlaceholderText(/password/i), { target: { value: testUser.password } });
 
     fireEvent.click(screen.getByRole("button", { name: /sign up/i }));
 

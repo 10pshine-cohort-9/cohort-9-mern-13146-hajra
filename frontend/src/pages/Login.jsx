@@ -33,8 +33,14 @@ function Login() {
       } else {
         setError(res.message || "Failed to sign in.");
       }
-    } catch (err) {
-      setError(err.response?.data?.message || "An error occurred during sign in.");
+    } 
+     catch (err) {
+    setError(
+      err.response?.data?.message || 
+      err.message || 
+      "An error occurred during sign in."
+    );
+  
     } finally {
       setIsSubmitting(false);
     }
@@ -43,7 +49,6 @@ function Login() {
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-12 bg-[#F5F6FA]">
       
-      {/* Left Side: ~33% width */}
       <div className="hidden lg:flex lg:col-span-3 flex-col justify-between bg-gradient-to-br from-[#7C77C6] to-[#6c67b5] p-12 text-white relative overflow-hidden">
         <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-white/10 blur-2xl pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 w-96 h-96 rounded-full bg-black/10 blur-2xl pointer-events-none" />

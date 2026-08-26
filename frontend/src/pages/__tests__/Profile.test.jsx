@@ -58,7 +58,8 @@ describe("Profile Page Component", () => {
   it("shows error when password is less than 6 characters", async () => {
     renderComponent();
 
-    const passwordInput = screen.getByLabelText(/new password/i);
+    const passwordInput = screen.getByPlaceholderText(/new password|password/i);
+
     fireEvent.change(passwordInput, { target: { value: "12345" } });
     fireEvent.click(screen.getByRole("button", { name: /save changes/i }));
 
@@ -68,12 +69,12 @@ describe("Profile Page Component", () => {
     expect(mockUpdateUserProfile).not.toHaveBeenCalled();
   });
 
-  it("submits update successfully with optional valid password", async () => {
+it("submits update successfully with optional valid password", async () => {
     mockUpdateUserProfile.mockResolvedValueOnce({ success: true });
     renderComponent();
 
     const nameInput = screen.getByLabelText(/name/i);
-    const passwordInput = screen.getByLabelText(/new password/i);
+    const passwordInput = screen.getByPlaceholderText(/new password|password/i);
     const updatedName = `${mockUser.name} Updated`;
 
     fireEvent.change(nameInput, { target: { value: updatedName } });

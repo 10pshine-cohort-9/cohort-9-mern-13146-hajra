@@ -23,10 +23,7 @@ router.post("/login", authLimiter, login);
 router.get("/profile", authenticateToken, getProfile);
 
 router.put("/profile", 
- 
-  authenticateToken, 
-  upload.single("profile_picture"), 
-  updateProfile
+  authenticateToken, upload.single("profile_picture"), updateProfile
 );
 
 module.exports = router;

@@ -6,9 +6,18 @@ function Navbar() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Avatar resolver logic for Navbar
+  const getApiOrigin = () => {
+    const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+    try {
+      const parsedUrl = new URL(apiUrl);
+      return parsedUrl.origin;
+    } catch {
+      return "http://localhost:5000";
+    }
+  };
+
   const profilePicUrl = user?.profile_picture 
-    ? (user.profile_picture.startsWith("http") ? user.profile_picture : `http://localhost:5000${user.profile_picture}`)
+    ? (user.profile_picture.startsWith("http") ? user.profile_picture : `${getApiOrigin()}${user.profile_picture}`)
     : null;
 
   return (
@@ -24,7 +33,6 @@ function Navbar() {
         />
       </div>
 
-      {/* User Avatar & Greeting - Clickable to open Profile */}
       <div 
         onClick={() => navigate("/profile")}
         className="flex items-center gap-4 cursor-pointer p-2 rounded-2xl hover:bg-black/5 transition-all"

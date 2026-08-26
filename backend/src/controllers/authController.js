@@ -189,14 +189,16 @@ async function getProfile(req, res, next) {
 async function updateProfile(req, res, next) {
     try {
         const userId = req.user.id;
-        const { name, password } = req.body;
+        const body = req.body || {};
+        const { name, password } = body;
 
         const currentUser = await userModel.findUserById(userId);
         if (!currentUser) {
             return res.status(404).json({ success: false, message: "User not found" });
         }
 
-        const newName = name !== undefined && name.trim() !== "" ? String(name).trim() : currentUser.name;
+        const validName = typeof name === "string" ? name.trim() : "";
+        const newName = validName !== "" ? validName : currentUser.name;
         
         const profilePicturePath = req.file ? `/uploads/${req.file.filename}` : currentUser.profile_picture;
 
@@ -205,8 +207,8 @@ async function updateProfile(req, res, next) {
             profile_picture: profilePicturePath
         });
 
-        if (password && password.trim() !== "") {
-            const hashedPassword = await bcrypt.hash(String(password), 10);
+        if (typeof password === "string" && password.trim() !== "") {
+            const hashedPassword = await bcrypt.hash(password, 10);
             await userModel.updatePassword(userId, hashedPassword);
         }
 

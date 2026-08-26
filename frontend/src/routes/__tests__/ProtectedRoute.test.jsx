@@ -1,13 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import * as AuthContextModule from "../../context/authContext";
-
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = AuthContextModule.useAuth();
-  if (loading) return <div>Loading...</div>;
-  if (!isAuthenticated) return <div>Redirected to Login</div>;
-  return children;
-};
+import ProtectedRoute from "../../components/ProtectedRoute";
 
 describe("ProtectedRoute", () => {
   afterEach(() => {
@@ -23,6 +17,7 @@ describe("ProtectedRoute", () => {
     render(
       <MemoryRouter initialEntries={["/dashboard"]}>
         <Routes>
+          <Route path="/login" element={<div>Login Page</div>} />
           <Route
             path="/dashboard"
             element={
@@ -35,7 +30,7 @@ describe("ProtectedRoute", () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText("Redirected to Login")).toBeInTheDocument();
+    expect(screen.getByText("Login Page")).toBeInTheDocument();
     expect(screen.queryByText("Dashboard Content")).not.toBeInTheDocument();
   });
 
@@ -48,6 +43,7 @@ describe("ProtectedRoute", () => {
     render(
       <MemoryRouter initialEntries={["/dashboard"]}>
         <Routes>
+          <Route path="/login" element={<div>Login Page</div>} />
           <Route
             path="/dashboard"
             element={

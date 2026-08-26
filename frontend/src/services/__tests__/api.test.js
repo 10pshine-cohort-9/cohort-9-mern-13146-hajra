@@ -22,18 +22,21 @@ describe("api service & interceptors", () => {
   });
 
 
-  describe("Base Configuration", () => {
+describe("Base Configuration", () => {
     it("falls back to default baseURL when VITE_API_URL is undefined", () => {
       jest.resetModules();
+
+      const originalEnv = import.meta.env.VITE_API_URL;
       
-      const originalImportMetaEnv = global.importMetaEnv;
-      
-      // Force evaluate api with undefined VITE_API_URL
+      delete import.meta.env.VITE_API_URL;
+
       const freshApi = require("../api").default;
       expect(freshApi.defaults.baseURL).toBe("http://localhost:5000/api");
+
+      // Restore original env value
+      import.meta.env.VITE_API_URL = originalEnv;
     });
   });
-
 
   describe("Request Interceptor", () => {
     it("attaches Authorization header when token exists in localStorage", async () => {

@@ -27,7 +27,7 @@ async function getUserProfile(req, res, next) {
 async function updateUserProfile(req, res, next) {
     try {
         const userId = req.user?.id || req.user?.user_id;
-        const { name } = req.body || {};
+        const { name, password } = req.body || {};
 
         if (name !== undefined) {
             if (typeof name !== "string" || name.trim() === "") {
@@ -38,12 +38,26 @@ async function updateUserProfile(req, res, next) {
             }
         }
 
-        // ✅ Extract the file path properly from multer's req.file
+        if (password !== undefined) {
+            if (typeof password !== "string" || password.length < 6) {
+                return res.status(400).json({
+                    success: false,
+                    message: "New password must be at least 6 characters long"
+                });
+            }
+        }
+
         const profilePicturePath = req.file ? `/uploads/${req.file.filename}` : undefined;
+
+        let hashedPassword = undefined;
+        if (password !== undefined) {
+            hashedPassword = await bcrypt.hash(password, 10);
+        }
 
         const updatePayload = {
             name: name !== undefined ? name.trim() : undefined,
-            profile_picture: profilePicturePath
+            profile_picture: profilePicturePath,
+            password: hashedPassword
         };
 
         await userModel.updateUserProfile(userId, updatePayload);
@@ -51,7 +65,7 @@ async function updateUserProfile(req, res, next) {
         const getUser = userModel.findUserById || userModel.getUserById;
         const updatedUser = await getUser(userId);
 
-        const { password, ...userWithoutPassword } = updatedUser || {};
+        const { password: _, ...userWithoutPassword } = updatedUser || {};
 
         return res.status(200).json({
             success: true,

@@ -37,14 +37,20 @@ async function findUserById(userId) {
     }
 }
 
-async function updateUserProfile(userId, { name, profile_picture }) {
+async function updateUserProfile(userId, { name, profile_picture, password }) {
     try {
         const [result] = await pool.execute(
             `UPDATE users 
              SET name = COALESCE(?, name), 
-                 profile_picture = COALESCE(?, profile_picture) 
+                 profile_picture = COALESCE(?, profile_picture),
+                 password = COALESCE(?, password)
              WHERE id = ?`,
-            [name !== undefined ? name : null, profile_picture !== undefined ? profile_picture : null, userId]
+            [
+                name !== undefined ? name : null, 
+                profile_picture !== undefined ? profile_picture : null, 
+                password !== undefined ? password : null, 
+                userId
+            ]
         );
         return result.affectedRows;
     } catch (error) {
@@ -52,7 +58,6 @@ async function updateUserProfile(userId, { name, profile_picture }) {
         throw error;
     }
 }
-
 async function updateUserPassword(userId, hashedPassword) {
     try {
         const [result] = await pool.execute(
