@@ -25,7 +25,7 @@ router.get("/profile", authenticateToken, getProfile);
 
 router.put(
     "/profile",
-    authMiddleware,             
+    authenticateToken,
     upload.single("profile_picture"), 
     validateImageContent,         
     updateProfile     
