@@ -2,6 +2,7 @@ const logger = require("../logger/logger");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const userModel = require("../models/userModel");
+const pool = require("../config/db");
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -143,12 +144,82 @@ async function login(req, res, next) {
                 id: user.id,
                 name: user.name,
                 email: user.email,
+                profile_picture: user.profile_picture,
                 token,
                 user: {
                     id: user.id,
                     name: user.name,
-                    email: user.email
+                    email: user.email,
+                    profile_picture: user.profile_picture
                 }
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+async function getProfile(req, res, next) {
+    try {
+        const userId = req.user.id;
+        const user = await userModel.findUserById(userId); 
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                profile_picture: user.profile_picture // ✅ Added this line so it syncs properly
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+
+async function updateProfile(req, res, next) {
+    try {
+        const userId = req.user.id;
+        const { name, password } = req.body;
+
+        const currentUser = await userModel.findUserById(userId);
+        if (!currentUser) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        const newName = name !== undefined && name.trim() !== "" ? String(name).trim() : currentUser.name;
+        
+        const profilePicturePath = req.file ? `/uploads/${req.file.filename}` : currentUser.profile_picture;
+
+        await userModel.updateUserProfile(userId, {
+            name: newName,
+            profile_picture: profilePicturePath
+        });
+
+        if (password && password.trim() !== "") {
+            const hashedPassword = await bcrypt.hash(String(password), 10);
+            await userModel.updatePassword(userId, hashedPassword);
+        }
+
+        const updatedUser = await userModel.findUserById(userId);
+
+        return res.status(200).json({
+            success: true,
+            message: "Profile updated successfully",
+            data: {
+                id: updatedUser.id,
+                name: updatedUser.name,
+                email: updatedUser.email,
+                profile_picture: updatedUser.profile_picture 
             }
         });
     } catch (error) {
@@ -158,5 +229,7 @@ async function login(req, res, next) {
 
 module.exports = {
     register,
-    login
+    login,
+    getProfile,
+    updateProfile
 };

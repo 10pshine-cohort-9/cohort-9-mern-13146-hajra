@@ -27,7 +27,7 @@ async function getUserProfile(req, res, next) {
 async function updateUserProfile(req, res, next) {
     try {
         const userId = req.user?.id || req.user?.user_id;
-        const { name, profile_picture } = req.body || {};
+        const { name } = req.body || {};
 
         if (name !== undefined) {
             if (typeof name !== "string" || name.trim() === "") {
@@ -38,21 +38,12 @@ async function updateUserProfile(req, res, next) {
             }
         }
 
-        if (profile_picture !== undefined && profile_picture !== null) {
-            if (typeof profile_picture !== "string") {
-                return res.status(400).json({
-                    success: false,
-                    message: "Profile picture must be a string"
-                });
-            }
-        }
+        // ✅ Extract the file path properly from multer's req.file
+        const profilePicturePath = req.file ? `/uploads/${req.file.filename}` : undefined;
 
-        // Fixed: Safely treat null or non-strings without crashing .trim()
         const updatePayload = {
             name: name !== undefined ? name.trim() : undefined,
-            profile_picture: (profile_picture !== undefined && profile_picture !== null)
-                ? profile_picture.trim()
-                : profile_picture
+            profile_picture: profilePicturePath
         };
 
         await userModel.updateUserProfile(userId, updatePayload);
