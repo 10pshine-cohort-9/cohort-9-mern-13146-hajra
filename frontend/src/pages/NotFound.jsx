@@ -22,7 +22,7 @@ function NotFound() {
 
         <div className="flex justify-center">
           <Link
-            to="/"
+            to="/dashboard"
             className="inline-block px-8 py-3.5 bg-[#7C77C6] hover:bg-[#6c67b5] text-white text-base font-medium rounded-xl shadow-lg shadow-[#7C77C6]/25 transition-all duration-200 text-center"
           >
             Back to Dashboard

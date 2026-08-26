@@ -26,7 +26,6 @@ async function register(req, res, next) {
             });
         }
 
-        // FIX 1: Enforce minimum length and string type for password
         if (typeof password !== "string" || password.length < 6) {
             return res.status(400).json({
                 success: false,
@@ -54,7 +53,6 @@ async function register(req, res, next) {
         const hashedPassword = await bcrypt.hash(String(password), 10);
         let userId;
 
-        // FIX 2: Catch ER_DUP_ENTRY on race conditions and return HTTP 409
         try {
             userId = await userModel.createUser({
                 name: String(name).trim(),
@@ -207,7 +205,13 @@ async function updateProfile(req, res, next) {
             profile_picture: profilePicturePath
         });
 
-        if (typeof password === "string" && password.trim() !== "") {
+        if (password !== undefined && password !== null && password !== "") {
+            if (typeof password !== "string" || password.trim().length < 6) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Password must be at least 6 characters long"
+                });
+            }
             const hashedPassword = await bcrypt.hash(password, 10);
             await userModel.updatePassword(userId, hashedPassword);
         }
