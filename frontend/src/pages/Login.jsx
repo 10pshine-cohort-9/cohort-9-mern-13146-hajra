@@ -74,13 +74,12 @@ function Login() {
         </div>
       </div>
 
-      {/* Right Side: Form */}
-      <div className="lg:col-span-9 flex items-center justify-center p-6 sm:p-12">
-        <div className="w-full max-w-3xl bg-white/45 backdrop-blur-2xl rounded-3xl shadow-[0_8px_32px_0_rgba(124,119,198,0.15)] border border-white/60 p-12 sm:p-16">
+      <div className="lg:col-span-9 flex items-center justify-center p-12 sm:p-20">
+        <div className="w-full max-w-3xl bg-purple-300/10 backdrop-blur-3xl rounded-3xl shadow-[0_8px_32px_0_rgba(124,119,198,0.25)] border-purple-200/50) border border-purple-300 p-12 sm:p-16">
           
           <div className="mb-10 text-center lg:text-left">
             <h2 className="text-4xl sm:text-5xl font-extrabold text-[#3F3A85]">Sign In to Your Account</h2>
-            <p className="text-base sm:text-lg text-[#5A55A3] mt-2">Please enter your details to continue.</p>
+            <p className="text-base sm:text-lg text-[#5A55A3] mt-4">Please enter your details to continue.</p>
           </div>
 
           {error && (
@@ -89,9 +88,9 @@ function Login() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-8">
             <div>
-              <label htmlFor="email" className="block text-base font-semibold text-[#3F3A85] mb-2">Email Address</label>
+              <label htmlFor="email" className="text-lg block text-base font-semibold text-[#3F3A85] mb-2">Email Address</label>
               <Input
                 id="email"
                 type="email"
@@ -99,7 +98,7 @@ function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isSubmitting}
-                className="w-full bg-transparent px-4 py-3 text-base text-gray-800 border-none focus:outline-none focus:ring-0"
+                className="text-lg w-full bg-transparent px-4 py-3 text-base text-gray-800 border-none focus:outline-none focus:ring-0"
               />
             </div>
 
@@ -111,7 +110,7 @@ function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isSubmitting}
-                className="w-full bg-transparent px-4 py-3 pr-12 text-base text-gray-800 border-none outline-none focus:outline-none focus:ring-0 shadow-none"
+                className="text-lg w-full bg-transparent px-4 py-3 pr-12 text-base text-gray-800 border-none outline-none focus:outline-none focus:ring-0 shadow-none"
               />
             </div>
 
@@ -122,16 +121,16 @@ function Login() {
                 <Button 
                   type="submit" 
                   disabled={isSubmitting}
-                  className="w-full py-4 bg-[#7C77C6] hover:bg-[#6c67b5] text-white font-semibold text-lg rounded-xl shadow-lg transition-all duration-200"
+                  className="md:text-xl text-lg w-full py-4 bg-[#7C77C6] hover:bg-[#6c67b5] text-white font-semibold rounded-xl shadow-xl shadow-purple-300 transition-all duration-200"
                 >
                   Sign In
                 </Button>
               )}
             </div>
 
-            <p className="text-center text-base font-medium text-[#5A55A3] mt-8">
+            <p className="text-lg text-center text-base font-medium text-[#5A55A3] mt-8">
               Don't have an account?{" "}
-              <Link to="/signup" className="font-bold text-[#3F3A85] hover:underline">
+              <Link to="/signup" className="text-lg font-bold text-[#3F3A85] hover:underline">
                 Sign up
               </Link>
             </p>

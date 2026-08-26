@@ -62,7 +62,7 @@ function Signup() {
         <div className="my-auto max-w-sm">
           <h2 className="text-4xl font-extrabold tracking-tight mb-4 leading-tight text-white">
             Your digital notebook<br />
-            anywhere you go
+            Anywhere you go
           </h2>
           <p className="text-white/80 text-base leading-relaxed text-xl">
             Jot down thoughts instantly and keep all your notes safely stored in one minimalist, elegant workspace.
@@ -74,12 +74,11 @@ function Signup() {
         </div>
       </div>
 
-      {/* Right Side: Form */}
       <div className="lg:col-span-9 flex items-center justify-center p-6 sm:p-12">
-        <div className="w-full max-w-3xl bg-white/45 backdrop-blur-2xl rounded-3xl shadow-[0_8px_32px_0_rgba(124,119,198,0.15)] border border-white/60 p-12 sm:p-16">
+        <div className="w-full max-w-3xl bg-purple-300/10 backdrop-blur-3xl rounded-3xl shadow-[0_8px_32px_0_rgba(124,119,198,0.25)] border-purple-200/50) border border-purple-300 p-12 sm:p-16">
           <div className="text-center mb-10">
             <h1 className="text-4xl sm:text-5xl font-extrabold text-[#3F3A85]">Create an Account</h1>
-            <p className="text-base sm:text-lg text-[#5A55A3] mt-2">Sign up to get started with NotesApp</p>
+            <p className="text-base sm:text-lg text-[#5A55A3] mt-4">Sign up to get started with NotesApp</p>
           </div>
 
           {error && (
@@ -88,9 +87,9 @@ function Signup() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6 ">
             <div>
-              <label htmlFor="name" className="block text-base font-semibold text-[#3F3A85] mb-2">
+              <label htmlFor="name" className="text-lg block text-base font-semibold text-[#3F3A85] mb-2">
                 Full Name
               </label>
               <Input
@@ -100,12 +99,12 @@ function Signup() {
                 onChange={(e) => setName(e.target.value)}
                 disabled={isSubmitting}
                 placeholder="Enter your name"
-                className="w-full bg-transparent px-4 py-3 text-base text-gray-800 border-none focus:outline-none"
+                className="text-lg w-full bg-transparent px-4 py-3 text-base text-gray-800 border-none focus:outline-none"
               />
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-base font-semibold text-[#3F3A85] mb-2">
+              <label htmlFor="email" className="text-lg block text-base font-semibold text-[#3F3A85] mb-2">
                 Email Address
               </label>
               <Input
@@ -115,7 +114,7 @@ function Signup() {
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isSubmitting}
                 placeholder="Enter your email"
-                className="w-full bg-transparent px-4 py-3 text-base text-gray-800 border-none focus:outline-none"
+                className="text-lg w-full bg-transparent px-4 py-3 text-base text-gray-800 border-none focus:outline-none"
               />
             </div>
 
@@ -127,7 +126,7 @@ function Signup() {
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isSubmitting}
                 placeholder="Create a password"
-                className="w-full bg-transparent px-4 py-3 pr-12 text-base text-gray-800 border-none outline-none focus:outline-none focus:ring-0 shadow-none"
+                className="text-lg w-full bg-transparent px-4 py-3 pr-12 text-base text-gray-800 border-none outline-none focus:outline-none focus:ring-0 shadow-none"
               />
             </div>
 
@@ -138,7 +137,7 @@ function Signup() {
                 <Button 
                   type="submit" 
                   disabled={isSubmitting}
-                  className="w-full py-4 bg-[#7C77C6] hover:bg-[#6c67b5] text-white font-semibold text-lg rounded-xl shadow-lg transition-all duration-200"
+                  className="md: text-xl text-lg w-full py-4 bg-[#7C77C6] hover:bg-[#6c67b5] text-white font-semibold  rounded-xl shadow-xl shadow-purple-300 transition-all duration-200"
                 >
                   Sign Up
                 </Button>
@@ -146,7 +145,7 @@ function Signup() {
             </div>
           </form>
 
-          <p className="mt-8 text-center text-base font-medium text-[#5A55A3]">
+          <p className="text-lg mt-8 text-center text-base font-medium text-[#5A55A3]">
             Already have an account?{" "}
             <Link to="/login" className="font-bold text-[#3F3A85] hover:underline">
               Log in

@@ -1,5 +1,4 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useAuth } from "../context/authContext";
 import MainLayout from "../layouts/MainLayout";
 import Login from "../pages/Login";
 import Signup from "../pages/Signup";
@@ -7,27 +6,12 @@ import Dashboard from "../pages/Dashboard";
 import Profile from "../pages/Profile";
 import NotFound from "../pages/NotFound";
 import Loader from "../components/common/Loader";
-import ProtectedRoute from "../components/ProtectedRoute";
-
-function ProtectedRoute({ children }) {
-  const { isAuthenticated, loading } = useAuth();
-  if (loading) return <Loader />;
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
-  return <MainLayout>{children}</MainLayout>;
-}
-
-function PublicRoute({ children }) {
-  const { isAuthenticated, loading } = useAuth();
-  if (loading) return <Loader />;
-  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
-  return children;
-}
+import { ProtectedRoute, PublicRoute } from "../components/ProtectedRoute"; // 👈 Import both here!
 
 function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Updated root path: wrapped in PublicRoute so logged-in users go to dashboard, others go to signup */}
         <Route
           path="/"
           element={
@@ -36,7 +20,6 @@ function AppRoutes() {
             </PublicRoute>
           }
         />
-
         <Route
           path="/signup"
           element={

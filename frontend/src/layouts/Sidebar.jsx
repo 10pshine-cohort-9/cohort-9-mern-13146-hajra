@@ -17,7 +17,6 @@ function Sidebar() {
     navigate("/login");
   };
 
-  // Avatar resolver logic for Sidebar
   const profilePicUrl = user?.profile_picture 
     ? (user.profile_picture.startsWith("http") ? user.profile_picture : `http://localhost:5000${user.profile_picture}`)
     : null;
@@ -55,7 +54,6 @@ function Sidebar() {
       </div>
 
       <div className="pt-6 border-t border-purple-400/30 pl-2">
-        {/* Clickable Profile Section */}
         <div 
           onClick={() => navigate("/profile")}
           className="flex items-center gap-4 mb-4 cursor-pointer p-2 rounded-xl hover:bg-white/10 transition-all group"
