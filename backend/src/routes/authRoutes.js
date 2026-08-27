@@ -1,7 +1,10 @@
 const express = require("express");
 const rateLimit = require("express-rate-limit");
-const { register, login } = require("../controllers/authController");
+const { register, login ,getProfile , updateProfile } = require("../controllers/authController");
+const authenticateToken = require("../middleware/authMiddleware"); 
 
+
+const { upload, validateImageContent } = require("../middleware/uploadMiddleware");
 const router = express.Router();
 
 const authLimiter = rateLimit({
@@ -18,5 +21,13 @@ const authLimiter = rateLimit({
 
 router.post("/register", authLimiter, register);
 router.post("/login", authLimiter, login);
+router.get("/profile", authenticateToken, getProfile);
 
+router.put(
+    "/profile",
+    authenticateToken,
+    upload.single("profile_picture"), 
+    validateImageContent,         
+    updateProfile     
+            );            
 module.exports = router;

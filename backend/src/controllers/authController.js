@@ -2,6 +2,7 @@ const logger = require("../logger/logger");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const userModel = require("../models/userModel");
+const pool = require("../config/db");
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -25,7 +26,6 @@ async function register(req, res, next) {
             });
         }
 
-        // FIX 1: Enforce minimum length and string type for password
         if (typeof password !== "string" || password.length < 6) {
             return res.status(400).json({
                 success: false,
@@ -53,7 +53,6 @@ async function register(req, res, next) {
         const hashedPassword = await bcrypt.hash(String(password), 10);
         let userId;
 
-        // FIX 2: Catch ER_DUP_ENTRY on race conditions and return HTTP 409
         try {
             userId = await userModel.createUser({
                 name: String(name).trim(),
@@ -143,12 +142,90 @@ async function login(req, res, next) {
                 id: user.id,
                 name: user.name,
                 email: user.email,
+                profile_picture: user.profile_picture,
                 token,
                 user: {
                     id: user.id,
                     name: user.name,
-                    email: user.email
+                    email: user.email,
+                    profile_picture: user.profile_picture
                 }
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+async function getProfile(req, res, next) {
+    try {
+        const userId = req.user.id;
+        const user = await userModel.findUserById(userId); 
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                profile_picture: user.profile_picture // ✅ Added this line so it syncs properly
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+}
+
+
+async function updateProfile(req, res, next) {
+    try {
+        const userId = req.user.id;
+        const body = req.body || {};
+        const { name, password } = body;
+
+        const currentUser = await userModel.findUserById(userId);
+        if (!currentUser) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        const validName = typeof name === "string" ? name.trim() : "";
+        const newName = validName !== "" ? validName : currentUser.name;
+        
+        const profilePicturePath = req.file ? `/uploads/${req.file.filename}` : currentUser.profile_picture;
+
+        await userModel.updateUserProfile(userId, {
+            name: newName,
+            profile_picture: profilePicturePath
+        });
+
+        if (password !== undefined && password !== null && password !== "") {
+            if (typeof password !== "string" || password.trim().length < 6) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Password must be at least 6 characters long"
+                });
+            }
+            const hashedPassword = await bcrypt.hash(password, 10);
+            await userModel.updatePassword(userId, hashedPassword);
+        }
+
+        const updatedUser = await userModel.findUserById(userId);
+
+        return res.status(200).json({
+            success: true,
+            message: "Profile updated successfully",
+            data: {
+                id: updatedUser.id,
+                name: updatedUser.name,
+                email: updatedUser.email,
+                profile_picture: updatedUser.profile_picture 
             }
         });
     } catch (error) {
@@ -158,5 +235,7 @@ async function login(req, res, next) {
 
 module.exports = {
     register,
-    login
+    login,
+    getProfile,
+    updateProfile
 };

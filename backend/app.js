@@ -1,4 +1,5 @@
 const express = require("express");
+const path = require("path");
 const cors = require("cors");
 const pinoHttp = require("pino-http");
 const logger = require("./src/logger/logger");
@@ -26,7 +27,10 @@ app.use(cors({
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use("/uploads", express.static(path.join(__dirname, "src/uploads")));
+
 app.use(pinoHttp({ logger }));
+
 
 app.get("/", (req, res) => {
     res.send("Notes API is running");
