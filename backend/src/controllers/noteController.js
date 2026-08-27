@@ -12,21 +12,24 @@ async function createNote(req, res, next) {
     try {
         const { title, content } = req.body || {};
 
-        if (!title || typeof title !== "string" || !title.trim()) {
+        const safeTitle = (typeof title === "string") ? title.trim() : "";
+        const safeContent = (typeof content === "string") ? content.trim() : "";
+        const isContentEmpty = !safeContent || safeContent === "<p><br></p>" || safeContent === "<p></p>";
+
+        // If both are missing/empty, reject it immediately with 400
+        if (!safeTitle && isContentEmpty) {
             return res.status(400).json({
                 success: false,
-                message: "Title is required"
+                message: "Title or content is required"
             });
         }
 
         const userId = req.user?.id || req.user?.user_id;
 
-        const formattedContent = (typeof content === "string") ? content.trim() : "";
-
         const noteData = {
             user_id: userId,
-            title: title.trim(),
-            content: formattedContent
+            title: safeTitle,
+            content: safeContent
         };
 
         const insertId = await noteModel.createNote(noteData);
