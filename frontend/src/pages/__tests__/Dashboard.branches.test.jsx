@@ -264,23 +264,31 @@ describe('Dashboard - sort comparator branches actually reorder notes', () => {
 });
 
 describe('Dashboard - handleDownloadNote fallback branches', () => {
-  test('uses "Untitled Note" filename fallback when title is empty', async () => {
-    noteService.getNotes.mockResolvedValue([
-      { id: 9, title: '', content: '', is_pinned: 0, is_archived: 0, updated_at: '2026-06-01T10:00:00Z' },
-    ]);
-    const realCreateElement = document.createElement.bind(document);
-    let capturedAnchor = null;
+  let capturedAnchor = null;
+  const realCreateElement = document.createElement.bind(document);
+
+  beforeEach(() => {
+    capturedAnchor = null;
     jest.spyOn(document, 'createElement').mockImplementation((tag) => {
       const el = realCreateElement(tag);
       if (tag === 'a') capturedAnchor = el;
       return el;
     });
+  });
+
+  afterEach(() => {
+    document.createElement.mockRestore();
+  });
+
+  test('uses "Untitled Note" filename fallback when title is empty', async () => {
+    noteService.getNotes.mockResolvedValue([
+      { id: 9, title: '', content: '', is_pinned: 0, is_archived: 0, updated_at: '2026-06-01T10:00:00Z' },
+    ]);
 
     render(<Dashboard />);
     await waitFor(() => expect(screen.getByTitle('Download Note (.txt)')).toBeInTheDocument());
     fireEvent.click(screen.getByTitle('Download Note (.txt)'));
 
     expect(capturedAnchor.download).toBe('untitled_note.txt');
-    document.createElement.mockRestore();
   });
 });

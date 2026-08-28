@@ -38,17 +38,22 @@ export function Dashboard() {
   const [noteColors, setNoteColors] = useState({});
   const [activePaletteMenu, setActivePaletteMenu] = useState(null);
 
-  const fetchNotes = useCallback(async () => {
+const fetchNotes = useCallback(async () => {
     try {
+      setError('');
       const data = await noteService.getNotes();
       const fetchedNotes = Array.isArray(data) ? data : data.notes || [];
       setNotes(fetchedNotes);
 
-      const initialColors = {};
-      fetchedNotes.forEach((note, index) => {
-        initialColors[note.id] = index % THEMED_PASTEL_PALETTES.length;
+      setNoteColors((prevColors) => {
+        const updatedColors = { ...prevColors };
+        fetchedNotes.forEach((note, index) => {
+          if (updatedColors[note.id] === undefined) {
+            updatedColors[note.id] = index % THEMED_PASTEL_PALETTES.length;
+          }
+        });
+        return updatedColors;
       });
-      setNoteColors(initialColors);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to fetch notes');
     }
@@ -61,6 +66,7 @@ export function Dashboard() {
   const handleSearchChange = async (e) => {
     const query = e.target.value;
     setSearchQuery(query);
+    setError('');
 
     try {
       if (!query.trim()) {
@@ -108,6 +114,7 @@ const handleSaveNote = async (noteData) => {
 };
   const handleDelete = async (id) => {
     try {
+      setError('');
       await noteService.deleteNote(id);
       fetchNotes();
     } catch (err) {
@@ -117,6 +124,7 @@ const handleSaveNote = async (noteData) => {
 
   const handleTogglePin = async (id) => {
     try {
+      setError('');
       await noteService.togglePin(id);
       fetchNotes();
     } catch (err) {
@@ -126,6 +134,7 @@ const handleSaveNote = async (noteData) => {
 
   const handleToggleArchive = async (id) => {
     try {
+      setError('');
       await noteService.toggleArchive(id);
       fetchNotes();
     } catch (err) {
@@ -133,45 +142,62 @@ const handleSaveNote = async (noteData) => {
     }
   };
 
-  const handleDownloadNote = (note) => {
-    const fileTitle = note.title ? note.title.trim() : 'Untitled Note';
-    const fileContent = `Title: ${fileTitle}\n\n${note.content || ''}`;
+const handleDownloadNote = (note) => {
+    const rawTitle = note.title ? note.title.trim() : '';
+    const fileTitle = rawTitle !== '' ? rawTitle : 'Untitled Note';
+    
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = note.content || '';
+    const plainTextContent = tempDiv.textContent || tempDiv.innerText || '';
+
+    const fileContent = `Title: ${fileTitle}\n\n${plainTextContent}`;
     
     const element = document.createElement('a');
     const file = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
-    element.href = URL.createObjectURL(file);
+    const objectUrl = URL.createObjectURL(file);
+    
+    element.href = objectUrl;
     element.download = `${fileTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.txt`;
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
+    
+    URL.revokeObjectURL(objectUrl);
   };
-const categoryFiltered = searchQuery.trim()
-    ? notes
-    : notes.filter((note) => {
-        const isArchived = note.is_archived === 1 || note.is_archived === true;
-        const isPinned = note.is_pinned === 1 || note.is_pinned === true;
+const categoryFiltered = notes.filter((note) => {
+    const isArchived = note.is_archived === 1 || note.is_archived === true;
+    const isPinned = note.is_pinned === 1 || note.is_pinned === true;
 
-        if (filter === 'pinned') return isPinned && !isArchived;
-        if (filter === 'archived') return isArchived;
-        return !isArchived;
-      });
+    if (filter === 'pinned') return isPinned && !isArchived;
+    if (filter === 'archived') return isArchived;
+    return !isArchived;
+  });
 
-      const filteredNotes = [...categoryFiltered].sort((a, b) => {
-  const aPinned = a.is_pinned === 1 || a.is_pinned === true;
-  const bPinned = b.is_pinned === 1 || b.is_pinned === true;
+  const searchedAndFiltered = searchQuery.trim()
+    ? categoryFiltered.filter((note) => {
+        const query = searchQuery.toLowerCase();
+        const titleMatch = (note.title || '').toLowerCase().includes(query);
+        const contentMatch = (note.content || '').toLowerCase().includes(query);
+        return titleMatch || contentMatch;
+      })
+    : categoryFiltered;
 
-  if (aPinned !== bPinned) return aPinned ? -1 : 1; // pinned first, regardless of tab
+  const filteredNotes = [...searchedAndFiltered].sort((a, b) => {
+    const aPinned = a.is_pinned === 1 || a.is_pinned === true;
+    const bPinned = b.is_pinned === 1 || b.is_pinned === true;
 
-  if (sortOrder === 'newest') {
-    return new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at);
-  }
-  if (sortOrder === 'oldest') {
-    return new Date(a.updated_at || a.created_at) - new Date(b.updated_at || b.created_at);
-  }
-  if (sortOrder === 'az') return (a.title || '').localeCompare(b.title || '');
-  if (sortOrder === 'za') return (b.title || '').localeCompare(a.title || '');
-  return 0;
-});
+    if (aPinned !== bPinned) return aPinned ? -1 : 1; // pinned first, regardless of tab
+
+    if (sortOrder === 'newest') {
+      return new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at);
+    }
+    if (sortOrder === 'oldest') {
+      return new Date(a.updated_at || a.created_at) - new Date(b.updated_at || b.created_at);
+    }
+    if (sortOrder === 'az') return (a.title || '').localeCompare(b.title || '');
+    if (sortOrder === 'za') return (b.title || '').localeCompare(a.title || '');
+    return 0;
+  });
 
   const changeNoteColor = (noteId, paletteIndex) => {
     setNoteColors((prev) => ({ ...prev, [noteId]: paletteIndex }));

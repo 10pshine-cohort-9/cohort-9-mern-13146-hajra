@@ -71,7 +71,6 @@ describe('Dashboard Interactions and Edge Cases', () => {
     noteService.updateNote.mockRejectedValueOnce({
       response: { data: { message: 'Failed to update note' } },
     });
-    noteService.togglePin.mockRejectedValueOnce({});
 
     render(<Dashboard />);
 
@@ -109,10 +108,9 @@ describe('Dashboard Interactions and Edge Cases', () => {
     fireEvent.click(paletteButtons[0]);
 
     await waitFor(() => {
-      const colorOptions = document.querySelectorAll('.absolute.right-0 button, [class*="rounded-full"]');
-      if (colorOptions.length > 0) {
-        fireEvent.click(colorOptions[colorOptions.length - 1]);
-      }
+      const lavenderBtn = screen.getByTitle('Lavender');
+      expect(lavenderBtn).toBeInTheDocument();
+      fireEvent.click(lavenderBtn);
     });
   });
 
@@ -131,20 +129,17 @@ describe('Dashboard Interactions and Edge Cases', () => {
     fireEvent.click(paletteButtons[0]);
 
     await waitFor(() => {
-      const colorOptions = document.querySelectorAll('.absolute.right-0 button, [class*="rounded-full"]');
-      if (colorOptions.length > 0) {
-        fireEvent.click(colorOptions[0]);
-      }
+      const lavenderBtn = screen.getByTitle('Lavender');
+      expect(lavenderBtn).toBeInTheDocument();
+      fireEvent.click(lavenderBtn);
     });
 
-    noteService.updateNote.mockRejectedValueOnce({});
     fireEvent.click(paletteButtons[0]);
 
     await waitFor(() => {
-      const colorOptions = document.querySelectorAll('.absolute.right-0 button, [class*="rounded-full"]');
-      if (colorOptions.length > 0) {
-        fireEvent.click(colorOptions[0]);
-      }
+      const lavenderBtn = screen.getByTitle('Lavender');
+      expect(lavenderBtn).toBeInTheDocument();
+      fireEvent.click(lavenderBtn);
     });
 
     const searchInput = screen.getByPlaceholderText(/search notes by title or content/i);
@@ -180,23 +175,17 @@ describe('Dashboard Interactions and Edge Cases', () => {
       expect(screen.getByText('Alpha Note')).toBeInTheDocument();
     });
 
-    // 1. Cover Lines 168 & 171: Open palette dropdown and click a color option to invoke changeNoteColor and <MdCheck />
     const paletteBtn = screen.getByTitle('Change Color');
     fireEvent.click(paletteBtn);
 
     await waitFor(() => {
-      // Target the color option buttons directly inside the active palette grid popup
-      const colorBtns = screen.getAllByRole('button');
-      const lavenderOption = colorBtns.find(btn => btn.getAttribute('title') === 'Lavender');
-      if (lavenderOption) {
-        fireEvent.click(lavenderOption);
-      }
+      const lavenderOption = screen.getByTitle('Lavender');
+      expect(lavenderOption).toBeInTheDocument();
+      fireEvent.click(lavenderOption);
     });
 
-    // 2. Cover Lines 86-93: Test search query with only whitespace (triggers !query.trim() -> await fetchNotes())
     const searchInput = screen.getByPlaceholderText(/search notes by title or content/i);
     
-    // First, search something valid so notes change
     noteService.searchNotes.mockResolvedValueOnce(mockNotesData);
     fireEvent.change(searchInput, { target: { value: 'Alpha' } });
     
@@ -204,7 +193,6 @@ describe('Dashboard Interactions and Edge Cases', () => {
       expect(noteService.searchNotes).toHaveBeenCalledWith({ q: 'Alpha' });
     });
 
-    // Now clear it with whitespace to trigger lines 86-93
     fireEvent.change(searchInput, { target: { value: '   ' } });
     await waitFor(() => {
       expect(noteService.getNotes).toHaveBeenCalledTimes(2);
@@ -217,6 +205,7 @@ describe('Dashboard Interactions and Edge Cases', () => {
       expect(screen.getByText('Failed to search notes')).toBeInTheDocument();
     });
   });
+
   test('fully covers search reset, search error catch, and color selection branches', async () => {
     const mockNotesList = [
       {
@@ -241,11 +230,9 @@ describe('Dashboard Interactions and Edge Cases', () => {
     fireEvent.click(paletteTrigger);
 
     await waitFor(() => {
-      const colorChoices = screen.getAllByRole('button');
-      const lavenderBtn = colorChoices.find(b => b.getAttribute('title') === 'Lavender');
-      if (lavenderBtn) {
-        fireEvent.click(lavenderBtn);
-      }
+      const lavenderBtn = screen.getByTitle('Lavender');
+      expect(lavenderBtn).toBeInTheDocument();
+      fireEvent.click(lavenderBtn);
     });
 
     const searchField = screen.getByPlaceholderText(/search notes by title or content/i);
@@ -270,45 +257,45 @@ describe('Dashboard Interactions and Edge Cases', () => {
   });
 
   describe('Dashboard - remaining error and date fallback branches', () => {
-  test('handles fetchNotes error when response has no error message', async () => {
-    noteService.getNotes.mockRejectedValueOnce({});
-    render(<Dashboard />);
-    await waitFor(() => expect(screen.getByText('Failed to fetch notes')).toBeInTheDocument());
-  });
-
-  test('handles searchNotes error when response has no error message', async () => {
-    noteService.getNotes.mockResolvedValue([]);
-    noteService.searchNotes.mockRejectedValueOnce({});
-    render(<Dashboard />);
-    await waitFor(() => expect(screen.getByText('No notes found.')).toBeInTheDocument());
-    
-    fireEvent.change(screen.getByPlaceholderText(/search notes by title or content/i), {
-      target: { value: 'test' },
+    test('handles fetchNotes error when response has no error message', async () => {
+      noteService.getNotes.mockRejectedValueOnce({});
+      render(<Dashboard />);
+      await waitFor(() => expect(screen.getByText('Failed to fetch notes')).toBeInTheDocument());
     });
-    await waitFor(() => expect(screen.getByText('Failed to search notes')).toBeInTheDocument());
-  });
 
-  test('handles handleDelete error when response has no error message', async () => {
-    noteService.getNotes.mockResolvedValue([
-      { id: 10, title: 'Delete Me', content: 'x', is_pinned: 0, is_archived: 0, updated_at: '2026-06-01T10:00:00Z' },
-    ]);
-    noteService.deleteNote.mockRejectedValueOnce({});
-    render(<Dashboard />);
-    await waitFor(() => expect(screen.getByText('Delete Me')).toBeInTheDocument());
-    
-    fireEvent.click(screen.getByTitle('Delete Note'));
-    await waitFor(() => expect(screen.getByText('Failed to delete note')).toBeInTheDocument());
-  });
+    test('handles searchNotes error when response has no error message', async () => {
+      noteService.getNotes.mockResolvedValue([]);
+      noteService.searchNotes.mockRejectedValueOnce({});
+      render(<Dashboard />);
+      await waitFor(() => expect(screen.getByText('No notes found.')).toBeInTheDocument());
+      
+      fireEvent.change(screen.getByPlaceholderText(/search notes by title or content/i), {
+        target: { value: 'test' },
+      });
+      await waitFor(() => expect(screen.getByText('Failed to search notes')).toBeInTheDocument());
+    });
 
-  test('falls back to created_at when updated_at is missing for sorting and date display', async () => {
-    noteService.getNotes.mockResolvedValue([
-      { id: 11, title: 'No Updated At', content: 'x', is_pinned: 0, is_archived: 0, created_at: '2026-06-05T10:00:00Z' },
-    ]);
-    render(<Dashboard />);
-    await waitFor(() => expect(screen.getByText('No Updated At')).toBeInTheDocument());
-    
-    fireEvent.change(screen.getByDisplayValue('Sort Notes'), { target: { value: 'newest' } });
-    await waitFor(() => expect(screen.getByText('No Updated At')).toBeInTheDocument());
+    test('handles handleDelete error when response has no error message', async () => {
+      noteService.getNotes.mockResolvedValue([
+        { id: 10, title: 'Delete Me', content: 'x', is_pinned: 0, is_archived: 0, updated_at: '2026-06-01T10:00:00Z' },
+      ]);
+      noteService.deleteNote.mockRejectedValueOnce({});
+      render(<Dashboard />);
+      await waitFor(() => expect(screen.getByText('Delete Me')).toBeInTheDocument());
+      
+      fireEvent.click(screen.getByTitle('Delete Note'));
+      await waitFor(() => expect(screen.getByText('Failed to delete note')).toBeInTheDocument());
+    });
+
+    test('falls back to created_at when updated_at is missing for sorting and date display', async () => {
+      noteService.getNotes.mockResolvedValue([
+        { id: 11, title: 'No Updated At', content: 'x', is_pinned: 0, is_archived: 0, created_at: '2026-06-05T10:00:00Z' },
+      ]);
+      render(<Dashboard />);
+      await waitFor(() => expect(screen.getByText('No Updated At')).toBeInTheDocument());
+      
+      fireEvent.change(screen.getByDisplayValue('Sort Notes'), { target: { value: 'newest' } });
+      await waitFor(() => expect(screen.getByText('No Updated At')).toBeInTheDocument());
+    });
   });
-});
 });

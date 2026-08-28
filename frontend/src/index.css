@@ -1,21 +1,10 @@
 @import "tailwindcss";
 
-.note-editor .ql-toolbar {
-  padding: 12px !important;
-  border-top-left-radius: 0.75rem !important;
-  border-top-right-radius: 0.75rem !important;
+.note-editor {
+  max-height: 40vh; 
+  display: flex;
+  flex-direction: column;
 }
-
-.note-editor .ql-toolbar button {
-  width: 30px !important;
-  height: 30px !important;
-}
-
-.note-editor .ql-toolbar button svg {
-  width: 20px !important;
-  height: 20px !important;
-}
-
 .note-editor .ql-editor {
   min-height: 350px !important;
   font-size: 16px !important;
@@ -24,8 +13,12 @@
   border-bottom-right-radius: 0.75rem !important;
 }
 
-.note-editor .ql-editor.ql-blank::before {
+.note-editor .ql-editor {
+  min-height: 150px !important; 
+  max-height: 350px !important;
   font-size: 16px !important;
-  font-style: normal !important;
-  color: #9ca3af !important;
+  line-height: 1.7 !important;
+  border-bottom-left-radius: 0.75rem !important;
+  border-bottom-right-radius: 0.75rem !important;
+  overflow-y: auto !important;
 }

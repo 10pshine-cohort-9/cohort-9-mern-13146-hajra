@@ -7,24 +7,19 @@ import Dashboard from '../Dashboard';
 import { noteService } from '../../services/noteService';
 
 
-beforeEach(() => {
-    delete window.location;
-    window.location = { href: '', assign: jest.fn(), replace: jest.fn() };
-  });
-
 
 if (typeof URL.createObjectURL === 'undefined') {
-  Object.defineProperty(URL, 'createObjectURL', {
-    value: jest.fn(() => 'mocked-object-url'),
-    writable: true,
-  });
+    Object.defineProperty(URL, 'createObjectURL', {
+        value: jest.fn(() => 'mocked-object-url'),
+        writable: true,
+    });
 }
 
 if (typeof URL.revokeObjectURL === 'undefined') {
-  Object.defineProperty(URL, 'revokeObjectURL', {
-    value: jest.fn(),
-    writable: true,
-  });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+        value: jest.fn(),
+        writable: true,
+    });
 }
 
 jest.mock('../../services/noteService', () => ({

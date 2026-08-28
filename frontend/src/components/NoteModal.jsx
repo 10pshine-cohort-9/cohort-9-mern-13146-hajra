@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { MdClose } from 'react-icons/md';
 import { FiCornerUpLeft, FiCornerUpRight } from 'react-icons/fi';
 import ReactQuill from 'react-quill-new';
+import PropTypes from 'prop-types';
 import 'react-quill-new/dist/quill.snow.css';
 
 export function NoteModal({ isOpen, onClose, onSave, initialData }) {
@@ -87,7 +88,7 @@ const handleSubmit = async (e) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 max-h-[90vh] and overflow-y-auto">
       <div className="relative w-full max-w-2xl rounded-2xl bg-purple-100 p-8 shadow-2xl border border-gray-100">
         <button
           type="button"
@@ -119,11 +120,12 @@ const handleSubmit = async (e) => {
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="block font-semibold text-[#6c67ac] text-xl">Content</label>
-              <div className="flex gap-1">
+             <div className="flex gap-1">
                 <div className="relative group">
                   <button
                     type="button"
                     onClick={handleUndo}
+                    aria-label="Undo" // <--- ADDED ARIA-LABEL HERE
                     className="p-2 rounded-lg bg-white border border-purple-300 text-[#7C77C6] hover:bg-purple-50 transition-colors"
                   >
                     <FiCornerUpLeft className="text-lg" />
@@ -136,6 +138,7 @@ const handleSubmit = async (e) => {
                   <button
                     type="button"
                     onClick={handleRedo}
+                    aria-label="Redo" // <--- ADDED ARIA-LABEL HERE
                     className="p-2 rounded-lg bg-white border border-purple-300 text-[#7C77C6] hover:bg-purple-50 transition-colors"
                   >
                     <FiCornerUpRight className="text-lg" />
@@ -212,5 +215,20 @@ const handleSubmit = async (e) => {
     </div>
   );
 }
+
+NoteModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSave: PropTypes.func.isRequired,
+  initialData: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    title: PropTypes.string,
+    content: PropTypes.string,
+    body: PropTypes.string,
+    description: PropTypes.string,
+    is_pinned: PropTypes.oneOfType([PropTypes.bool, PropTypes.number]),
+    is_archived: PropTypes.oneOfType([PropTypes.bool, PropTypes.number]),
+  }),
+};
 
 export default NoteModal;

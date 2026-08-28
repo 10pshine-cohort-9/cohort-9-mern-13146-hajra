@@ -1,39 +1,45 @@
-import api from '../services/api';
+import api from './api';
+
+const handleApiCall = async (apiCall) => {
+  try {
+    const response = await apiCall();
+    return response.data.data || response.data.notes || response.data.note || response.data;
+  } catch (err) {
+    const message = err.response?.data?.message || err.message || 'An unexpected error occurred';
+    const customError = new Error(message);
+    customError.response = err.response;
+    customError.status = err.response?.status;
+    throw customError;
+  }
+};
 
 export const noteService = {
   getNotes: async (params = {}) => {
-    const response = await api.get('/notes', { params });
-    return response.data.data || response.data.notes || response.data;
+    return handleApiCall(() => api.get('/notes', { params }));
   },
 
   searchNotes: async (searchParams) => {
-    const response = await api.get('/notes/search', { params: searchParams });
-    return response.data.data || response.data.notes || response.data;
+    return handleApiCall(() => api.get('/notes/search', { params: searchParams }));
   },
 
-createNote: async (noteData) => {
-  const response = await api.post('/notes', noteData);
-  return response.data.data || response.data.note || response.data;
-},
+  createNote: async (noteData) => {
+    return handleApiCall(() => api.post('/notes', noteData));
+  },
 
-updateNote: async (id, noteData) => {
-  const response = await api.put(`/notes/${id}`, noteData);
-  return response.data.data || response.data.note || response.data;
-},
+  updateNote: async (id, noteData) => {
+    return handleApiCall(() => api.put(`/notes/${id}`, noteData));
+  },
 
   deleteNote: async (id) => {
-    const response = await api.delete(`/notes/${id}`);
-    return response.data;
+    return handleApiCall(() => api.delete(`/notes/${id}`));
   },
 
   togglePin: async (id) => {
-    const response = await api.patch(`/notes/${id}/pin`);
-    return response.data;
+    return handleApiCall(() => api.patch(`/notes/${id}/pin`));
   },
 
   toggleArchive: async (id) => {
-    const response = await api.patch(`/notes/${id}/archive`);
-    return response.data;
+    return handleApiCall(() => api.patch(`/notes/${id}/archive`));
   },
 };
 
