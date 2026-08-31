@@ -147,5 +147,4 @@ Navbar.propTypes = {
   searchQuery: PropTypes.string,
   onSearchChange: PropTypes.func,
 };
-
 export default Navbar;

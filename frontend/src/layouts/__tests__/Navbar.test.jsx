@@ -60,9 +60,9 @@ describe('Navbar Component Branch Coverage', () => {
     fireEvent.click(screen.getAllByTitle('Go to Profile')[0]);
     expect(mockedNavigate).toHaveBeenCalledWith('/profile');
   });
+
   test('falls back to localhost origin when VITE_API_URL is malformed', () => {
-  const original = globalThis.import.meta.env.VITE_API_URL;
-  globalThis.import.meta.env.VITE_API_URL = 'not a valid url';
+  process.env.VITE_API_URL = 'not a valid url';
 
   useAuth.mockReturnValue({ user: { name: 'Hajra', profile_picture: '/pic.jpg' } });
 
@@ -75,7 +75,7 @@ describe('Navbar Component Branch Coverage', () => {
   const images = screen.getAllByAltText('Profile');
   expect(images[0].getAttribute('src')).toBe('http://localhost:5000/pic.jpg');
 
-  globalThis.import.meta.env.VITE_API_URL = original;
+  delete process.env.VITE_API_URL;
 });
 
 test('activates profile navigation via keyboard (Enter and Space)', () => {
