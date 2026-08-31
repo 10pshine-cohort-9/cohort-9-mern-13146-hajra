@@ -2,6 +2,7 @@ import React, { useState, cloneElement } from "react";
 import { useAuth } from "../context/authContext";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
+import PropTypes from 'prop-types';
 
 function MainLayout({ children }) {
   const { isAuthenticated } = useAuth();
@@ -42,5 +43,9 @@ function MainLayout({ children }) {
     </div>
   );
 }
+
+MainLayout.propTypes = {
+  children: PropTypes.element.isRequired,
+};
 
 export default MainLayout;

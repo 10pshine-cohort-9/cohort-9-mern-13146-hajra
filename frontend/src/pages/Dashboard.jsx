@@ -4,6 +4,7 @@ import { noteService } from '../services/noteService';
 import { NoteModal } from '../components/NoteModal';
 
 import DOMPurify from 'dompurify';
+import PropTypes from 'prop-types';
 
 import { 
   FiPlus, 
@@ -170,20 +171,29 @@ const handleImportFileChange = async (e) => {
     const extension = fileName.includes('.') ? fileName.split('.').pop().toLowerCase() : '';
 
     let notesToImport = [];
-
-    if (extension === 'json') {
-      const parsed = JSON.parse(text);
-      if (!Array.isArray(parsed)) {
-        setError('Invalid JSON file: expected a list of notes.');
-        return;
+let skippedCount = 0;                
+if (extension === 'json') {
+  const parsed = JSON.parse(text);
+  if (!Array.isArray(parsed)) {
+    setError('Invalid JSON file: expected a list of notes.');
+    return;
+  }
+  notesToImport = parsed
+    .map((item) => {
+      if (!item || typeof item !== 'object') {
+        skippedCount += 1;
+        return null;
       }
-      notesToImport = parsed.map((item) => ({
+      return {
         title: item.title || '',
         content: item.content || '',
         is_pinned: !!item.is_pinned,
         is_archived: !!item.is_archived,
-      }));
-    } else if (extension === 'txt' || extension === 'md' || file.type.startsWith('text/')) {
+      };
+    })
+    .filter(Boolean);
+}
+     else if (extension === 'txt' || extension === 'md' || file.type.startsWith('text/')) {
       const titleFromFilename = fileName.replace(/\.[^/.]+$/, '') || 'Imported Note';
       notesToImport = [
         {
@@ -198,18 +208,19 @@ const handleImportFileChange = async (e) => {
       return;
     }
 
-    for (const item of notesToImport) {
+ for (const item of notesToImport) {
       if (!item.title && !item.content) continue; 
-      const created = await noteService.createNote({
-        title: item.title,
-        content: item.content,
-      });
+      const created = await noteService.createNote({ title: item.title, content: item.content });
       const newId = created.id || created;
       if (item.is_pinned) await noteService.togglePin(newId);
       if (item.is_archived) await noteService.toggleArchive(newId);
     }
 
     await fetchNotes();
+
+    if (skippedCount > 0) {
+      setError(`Skipped ${skippedCount} invalid item(s) in the imported file.`);
+    }
   } catch (err) {
     setError('Failed to import notes. Please check the file format.');
   } finally {
@@ -456,4 +467,9 @@ const categoryFiltered = notes.filter((note) => {
   );
 }
 
+Dashboard.propTypes = {
+  searchQuery: PropTypes.string,
+  filter: PropTypes.oneOf(['all', 'pinned', 'archived']),
+  onFilterChange: PropTypes.func,
+};
 export default Dashboard;

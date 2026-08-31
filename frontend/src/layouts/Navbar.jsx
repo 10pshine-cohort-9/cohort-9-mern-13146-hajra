@@ -1,11 +1,20 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authContext";
 import { FiMenu, FiSearch } from "react-icons/fi";
+import PropTypes from 'prop-types';
 
 
 const ProfileSection = ({ profilePicUrl, user, onClick }) => (
   <div 
     onClick={onClick}
+    onKeyDown={(e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onClick();
+      }
+    }}
+    role="button"
+    tabIndex={0}
     className="flex items-center gap-2 cursor-pointer p-1.5 lg:p-3 rounded-2xl hover:bg-black/5 transition-all group shrink-0"
     title="Go to Profile"
   >
@@ -126,5 +135,17 @@ function Navbar({ onToggleSidebar, searchQuery, onSearchChange }) {
     </header>
   );
 }
+
+ProfileSection.propTypes = {
+  profilePicUrl: PropTypes.string,
+  user: PropTypes.shape({ name: PropTypes.string }),
+  onClick: PropTypes.func.isRequired,
+};
+
+Navbar.propTypes = {
+  onToggleSidebar: PropTypes.func,
+  searchQuery: PropTypes.string,
+  onSearchChange: PropTypes.func,
+};
 
 export default Navbar;

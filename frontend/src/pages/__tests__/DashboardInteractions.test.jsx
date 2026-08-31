@@ -163,9 +163,15 @@ test('newest/oldest sort falls back to created_at for notes missing updated_at',
   await waitFor(() => expect(screen.getByText('No Updated A')).toBeInTheDocument());
 
   const sortSelect = screen.getByDisplayValue('Sort Notes');
-  fireEvent.change(sortSelect, { target: { value: 'newest' } });
-  await waitFor(() => expect(screen.getByText('No Updated B')).toBeInTheDocument());
+fireEvent.change(sortSelect, { target: { value: 'newest' } });
+await waitFor(() => {
+  const titles = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
+  expect(titles.indexOf('No Updated B')).toBeLessThan(titles.indexOf('No Updated A'));
+});
 
-  fireEvent.change(sortSelect, { target: { value: 'oldest' } });
-  await waitFor(() => expect(screen.getByText('No Updated A')).toBeInTheDocument());
+fireEvent.change(sortSelect, { target: { value: 'oldest' } });
+await waitFor(() => {
+  const titles = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
+  expect(titles.indexOf('No Updated A')).toBeLessThan(titles.indexOf('No Updated B'));
+});
 });

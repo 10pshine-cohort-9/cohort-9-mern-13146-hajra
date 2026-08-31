@@ -4,6 +4,8 @@ import { useAuth } from "../context/authContext";
 import { FiLogOut, FiX } from "react-icons/fi";
 import { RiLayoutLeftLine, RiLayoutRightLine } from "react-icons/ri";
 
+import PropTypes from 'prop-types';
+
 const NAVIGATION_ITEMS = [
   { label: "Dashboard", path: "/dashboard", icon: "📝" },
   { label: "Profile", path: "/profile", icon: "👤" },
@@ -137,10 +139,19 @@ function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse, filter, onFil
 
         <div className="pt-6 border-t border-purple-400/30">
           <div 
-            onClick={() => { navigate("/profile"); onClose?.(); }}
-            className={`flex items-center gap-4 mb-4 cursor-pointer p-2 rounded-xl hover:bg-white/10 transition-all group ${isCollapsed ? "lg:justify-center" : ""}`}
-            title="Go to Profile"
-          >
+  onClick={() => { navigate("/profile"); onClose?.(); }}
+  onKeyDown={(e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      navigate("/profile");
+      onClose?.();
+    }
+  }}
+  role="button"
+  tabIndex={0}
+  className={`flex items-center gap-4 mb-4 cursor-pointer p-2 rounded-xl hover:bg-white/10 transition-all group ${isCollapsed ? "lg:justify-center" : ""}`}
+  title="Go to Profile"
+>
             {profilePicUrl ? (
               <img
                 src={profilePicUrl}
@@ -176,5 +187,14 @@ function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse, filter, onFil
     </>
   );
 }
+
+Sidebar.propTypes = {
+  isOpen: PropTypes.bool,
+  onClose: PropTypes.func,
+  isCollapsed: PropTypes.bool,
+  onToggleCollapse: PropTypes.func,
+  filter: PropTypes.oneOf(['all', 'pinned', 'archived']),
+  onFilterChange: PropTypes.func,
+};
 
 export default Sidebar;

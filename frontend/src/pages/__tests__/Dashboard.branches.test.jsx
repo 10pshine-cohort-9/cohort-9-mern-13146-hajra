@@ -600,3 +600,23 @@ test('pinned-first ordering works regardless of initial array order', async () =
     expect(titles.indexOf('Later Pinned')).toBeLessThan(titles.indexOf('First Unpinned'));
   });
 });
+
+test('skips invalid entries in a JSON array and reports how many were skipped', async () => {
+  noteService.getNotes.mockResolvedValue([]);
+  noteService.createNote.mockResolvedValue({ id: 40 });
+  render(<Dashboard />);
+  await waitFor(() => expect(screen.getByText('No notes found.')).toBeInTheDocument());
+
+  const file = new File(
+    [JSON.stringify([{ title: 'Valid Note', content: 'x' }, null, 'not-an-object'])],
+    'mixed.json',
+    { type: 'application/json' }
+  );
+  const input = document.querySelector('input[type="file"]');
+  fireEvent.change(input, { target: { files: [file] } });
+
+  await waitFor(() => {
+    expect(screen.getByText('Skipped 2 invalid item(s) in the imported file.')).toBeInTheDocument();
+  });
+  expect(noteService.createNote).toHaveBeenCalledWith({ title: 'Valid Note', content: 'x' });
+});

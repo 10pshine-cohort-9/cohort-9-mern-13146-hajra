@@ -27,8 +27,8 @@ describe('Navbar Component Branch Coverage', () => {
       </BrowserRouter>
     );
 
-    expect(screen.getByAltText('Profile')).toHaveAttribute('src', 'https://example.com/avatar.jpg');
-    expect(screen.getByText('Hajra')).toBeInTheDocument();
+    expect(screen.getAllByAltText('Profile')[0]).toHaveAttribute('src', 'https://example.com/avatar.jpg');
+    expect(screen.getAllByText('Hajra')[0]).toBeInTheDocument();
   });
 
   test('handles relative picture and valid API origin', () => {
@@ -42,7 +42,7 @@ describe('Navbar Component Branch Coverage', () => {
       </BrowserRouter>
     );
 
-    expect(screen.getByAltText('Profile')).toBeInTheDocument();
+    expect(screen.getAllByAltText('Profile')[0]).toBeInTheDocument();
   });
 
   test('renders default avatar and fallback username when user data is empty', () => {
@@ -54,10 +54,94 @@ describe('Navbar Component Branch Coverage', () => {
       </BrowserRouter>
     );
 
-    expect(screen.getByText('U')).toBeInTheDocument();
-    expect(screen.getByText('User')).toBeInTheDocument();
+    expect(screen.getAllByText('U')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('User')[0]).toBeInTheDocument();
 
-    fireEvent.click(screen.getByTitle('Go to Profile'));
+    fireEvent.click(screen.getAllByTitle('Go to Profile')[0]);
     expect(mockedNavigate).toHaveBeenCalledWith('/profile');
   });
+  test('falls back to localhost origin when VITE_API_URL is malformed', () => {
+  const original = globalThis.import.meta.env.VITE_API_URL;
+  globalThis.import.meta.env.VITE_API_URL = 'not a valid url';
+
+  useAuth.mockReturnValue({ user: { name: 'Hajra', profile_picture: '/pic.jpg' } });
+
+  render(
+    <BrowserRouter>
+      <Navbar />
+    </BrowserRouter>
+  );
+
+  const images = screen.getAllByAltText('Profile');
+  expect(images[0].getAttribute('src')).toBe('http://localhost:5000/pic.jpg');
+
+  globalThis.import.meta.env.VITE_API_URL = original;
+});
+
+test('activates profile navigation via keyboard (Enter and Space)', () => {
+  useAuth.mockReturnValue({ user: { name: 'Hajra' } });
+
+  render(
+    <BrowserRouter>
+      <Navbar />
+    </BrowserRouter>
+  );
+
+  const profileSections = screen.getAllByTitle('Go to Profile');
+  fireEvent.keyDown(profileSections[0], { key: 'Enter' });
+  expect(mockedNavigate).toHaveBeenCalledWith('/profile');
+
+  mockedNavigate.mockClear();
+  fireEvent.keyDown(profileSections[0], { key: ' ' });
+  expect(mockedNavigate).toHaveBeenCalledWith('/profile');
+
+  mockedNavigate.mockClear();
+  fireEvent.keyDown(profileSections[0], { key: 'Escape' });
+  expect(mockedNavigate).not.toHaveBeenCalled();
+});
+
+test('clicking mobile profile section also navigates', () => {
+  useAuth.mockReturnValue({ user: { name: 'Hajra' } });
+
+  render(
+    <BrowserRouter>
+      <Navbar />
+    </BrowserRouter>
+  );
+
+  const profileSections = screen.getAllByTitle('Go to Profile');
+  fireEvent.click(profileSections[1]);
+  expect(mockedNavigate).toHaveBeenCalledWith('/profile');
+});
+
+test('typing in desktop and mobile search inputs calls onSearchChange', () => {
+  const mockOnSearchChange = jest.fn();
+  useAuth.mockReturnValue({ user: { name: 'Hajra' } });
+
+  render(
+    <BrowserRouter>
+      <Navbar searchQuery="" onSearchChange={mockOnSearchChange} onToggleSidebar={jest.fn()} />
+    </BrowserRouter>
+  );
+
+  fireEvent.change(screen.getByPlaceholderText('Search notes here...'), { target: { value: 'todo' } });
+  expect(mockOnSearchChange).toHaveBeenCalledWith('todo');
+
+  fireEvent.change(screen.getByPlaceholderText('Search notes...'), { target: { value: 'grocery' } });
+  expect(mockOnSearchChange).toHaveBeenCalledWith('grocery');
+});
+
+test('clicking hamburger menu toggles sidebar', () => {
+  const mockOnToggleSidebar = jest.fn();
+  useAuth.mockReturnValue({ user: { name: 'Hajra' } });
+
+  render(
+    <BrowserRouter>
+      <Navbar onToggleSidebar={mockOnToggleSidebar} searchQuery="" onSearchChange={jest.fn()} />
+    </BrowserRouter>
+  );
+
+  fireEvent.click(screen.getByLabelText('Toggle Sidebar'));
+  expect(mockOnToggleSidebar).toHaveBeenCalled();
+});
 });
