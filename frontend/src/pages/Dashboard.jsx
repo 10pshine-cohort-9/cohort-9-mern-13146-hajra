@@ -1,18 +1,19 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback ,useRef } from 'react';
 import { noteService } from '../services/noteService';
 import { NoteModal } from '../components/NoteModal';
 
 import DOMPurify from 'dompurify';
+import PropTypes from 'prop-types';
 
 import { 
   FiPlus, 
-  FiSearch, 
   FiArchive, 
   FiEdit2, 
   FiTrash2, 
   FiRotateCcw,
-  FiDownload
+  FiDownload,
+    FiUpload 
 } from 'react-icons/fi';
 import { MdPalette, MdCheck, MdPushPin } from 'react-icons/md';
 
@@ -27,10 +28,11 @@ const THEMED_PASTEL_PALETTES = [
   { name: 'Zinc', bg: 'bg-zinc-100', border: 'border-zinc-200', text: 'text-zinc-600' }
 ];
 
-export function Dashboard() {
-  const [notes, setNotes] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState('all');
+export function Dashboard({ searchQuery = '', filter: filterProp, onFilterChange }) {
+    const [notes, setNotes] = useState([]);
+  const [internalFilter, setInternalFilter] = useState('all');
+  const filter = filterProp !== undefined ? filterProp : internalFilter;
+  const handleFilterChange = onFilterChange || setInternalFilter;
   const [sortOrder, setSortOrder] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState(null);
@@ -63,107 +65,170 @@ const fetchNotes = useCallback(async () => {
     fetchNotes();
   }, [fetchNotes]);
 
-  const handleSearchChange = async (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-    setError('');
-
-    try {
-      if (!query.trim()) {
-        await fetchNotes();
-        return;
-      }
-      const data = await noteService.searchNotes({ q: query });
-      setNotes(Array.isArray(data) ? data : data.notes || []);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to search notes');
-    }
-  };
 
 const handleSaveNote = async (noteData) => {
-  try {
-    const { id, title, content, is_pinned, is_archived } = noteData;
+  const { id, title, content, is_pinned, is_archived } = noteData;
 
-    if (id) {
-      await noteService.updateNote(id, { title, content });
+  if (id) {
+    await noteService.updateNote(id, { title, content });
 
-      const wasPinned = selectedNote?.is_pinned === 1 || selectedNote?.is_pinned === true;
-      if (Boolean(is_pinned) !== wasPinned) {
-        await noteService.togglePin(id);
-      }
-
-      const wasArchived = selectedNote?.is_archived === 1 || selectedNote?.is_archived === true;
-      if (Boolean(is_archived) !== wasArchived) {
-        await noteService.toggleArchive(id);
-      }
-    } else {
-      const savedNote = await noteService.createNote({ title, content });
-      const newNoteId = savedNote.id || savedNote; // handles depending on what your service returns
-
-      if (is_pinned) await noteService.togglePin(newNoteId);
-      if (is_archived) await noteService.toggleArchive(newNoteId);
+    const wasPinned = selectedNote?.is_pinned === 1 || selectedNote?.is_pinned === true;
+    if (Boolean(is_pinned) !== wasPinned) {
+      await noteService.togglePin(id);
     }
 
-    if (is_archived) setFilter('archived');
-    else if (is_pinned) setFilter('pinned');
+    const wasArchived = selectedNote?.is_archived === 1 || selectedNote?.is_archived === true;
+    if (Boolean(is_archived) !== wasArchived) {
+      await noteService.toggleArchive(id);
+    }
+  } else {
+    const savedNote = await noteService.createNote({ title, content });
+    const newNoteId = savedNote.id || savedNote;
 
-    await fetchNotes();
+    if (is_pinned) await noteService.togglePin(newNoteId);
+    if (is_archived) await noteService.toggleArchive(newNoteId);
+  }
+
+  if (is_archived) handleFilterChange('archived');
+  else if (is_pinned) handleFilterChange('pinned');
+
+  await fetchNotes();
+};
+
+const runNoteAction = async (action, fallbackMsg) => {
+  try {
+    setError('');
+    await action();
+    fetchNotes();
   } catch (err) {
-    throw err;
+    setError(err.response?.data?.message || fallbackMsg);
   }
 };
-  const handleDelete = async (id) => {
-    try {
-      setError('');
-      await noteService.deleteNote(id);
-      fetchNotes();
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete note');
-    }
-  };
 
-  const handleTogglePin = async (id) => {
-    try {
-      setError('');
-      await noteService.togglePin(id);
-      fetchNotes();
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update note pin status');
-    }
-  };
+const handleDelete = (id) =>
+  runNoteAction(() => noteService.deleteNote(id), 'Failed to delete note');
 
-  const handleToggleArchive = async (id) => {
-    try {
-      setError('');
-      await noteService.toggleArchive(id);
-      fetchNotes();
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update note archive status');
-    }
-  };
+const handleTogglePin = (id) =>
+  runNoteAction(() => noteService.togglePin(id), 'Failed to update note pin status');
+
+const handleToggleArchive = (id) =>
+  runNoteAction(() => noteService.toggleArchive(id), 'Failed to update note archive status');
+
+  const downloadAsFile = (content, filename, mimeType) => {
+  const element = document.createElement('a');
+  const file = new Blob([content], { type: mimeType });
+  const objectUrl = URL.createObjectURL(file);
+
+  element.href = objectUrl;
+  element.download = filename;
+  document.body.appendChild(element);
+  element.click();
+  document.body.removeChild(element);
+
+  URL.revokeObjectURL(objectUrl);
+};
 
 const handleDownloadNote = (note) => {
-    const rawTitle = note.title ? note.title.trim() : '';
-    const fileTitle = rawTitle !== '' ? rawTitle : 'Untitled Note';
-    
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = note.content || '';
-    const plainTextContent = tempDiv.textContent || tempDiv.innerText || '';
+  const rawTitle = note.title ? note.title.trim() : '';
+  const fileTitle = rawTitle !== '' ? rawTitle : 'Untitled Note';
 
-    const fileContent = `Title: ${fileTitle}\n\n${plainTextContent}`;
-    
-    const element = document.createElement('a');
-    const file = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
-    const objectUrl = URL.createObjectURL(file);
-    
-    element.href = objectUrl;
-    element.download = `${fileTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.txt`;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-    
-    URL.revokeObjectURL(objectUrl);
-  };
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = note.content || '';
+  const plainTextContent = tempDiv.textContent || tempDiv.innerText || '';
+
+  const fileContent = `Title: ${fileTitle}\n\n${plainTextContent}`;
+  const filename = `${fileTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.txt`;
+
+  downloadAsFile(fileContent, filename, 'text/plain;charset=utf-8');
+};
+
+ const handleExportNotes = () => {
+  const exportData = notes.map(({ title, content, is_pinned, is_archived }) => ({
+    title,
+    content,
+    is_pinned: !!is_pinned,
+    is_archived: !!is_archived,
+  }));
+
+  const fileContent = JSON.stringify(exportData, null, 2);
+  const filename = `notes-backup-${new Date().toISOString().slice(0, 10)}.json`;
+
+  downloadAsFile(fileContent, filename, 'application/json');
+};
+
+const handleImportClick = () => {
+  fileInputRef.current?.click();
+};
+
+const handleImportFileChange = async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  try {
+    setError('');
+    const text = await file.text();
+    const fileName = file.name || '';
+    const extension = fileName.includes('.') ? fileName.split('.').pop().toLowerCase() : '';
+
+    let notesToImport = [];
+let skippedCount = 0;                
+if (extension === 'json') {
+  const parsed = JSON.parse(text);
+  if (!Array.isArray(parsed)) {
+    setError('Invalid JSON file: expected a list of notes.');
+    return;
+  }
+  notesToImport = parsed
+    .map((item) => {
+      if (!item || typeof item !== 'object') {
+        skippedCount += 1;
+        return null;
+      }
+      return {
+        title: item.title || '',
+        content: item.content || '',
+        is_pinned: !!item.is_pinned,
+        is_archived: !!item.is_archived,
+      };
+    })
+    .filter(Boolean);
+}
+     else if (extension === 'txt' || extension === 'md' || file.type.startsWith('text/')) {
+      const titleFromFilename = fileName.replace(/\.[^/.]+$/, '') || 'Imported Note';
+      notesToImport = [
+        {
+          title: titleFromFilename,
+          content: text,
+          is_pinned: false,
+          is_archived: false,
+        },
+      ];
+    } else {
+      setError('Unsupported file type. Please import a .json, .txt, or .md file.');
+      return;
+    }
+
+ for (const item of notesToImport) {
+      if (!item.title && !item.content) continue; 
+      const created = await noteService.createNote({ title: item.title, content: item.content });
+      const newId = created.id || created;
+      if (item.is_pinned) await noteService.togglePin(newId);
+      if (item.is_archived) await noteService.toggleArchive(newId);
+    }
+
+    await fetchNotes();
+
+    if (skippedCount > 0) {
+      setError(`Skipped ${skippedCount} invalid item(s) in the imported file.`);
+    }
+  } catch (err) {
+    setError('Failed to import notes. Please check the file format.');
+  } finally {
+    e.target.value = ''; 
+  }
+};
+
+  const fileInputRef = useRef(null);
 const categoryFiltered = notes.filter((note) => {
     const isArchived = note.is_archived === 1 || note.is_archived === true;
     const isPinned = note.is_pinned === 1 || note.is_pinned === true;
@@ -174,13 +239,13 @@ const categoryFiltered = notes.filter((note) => {
   });
 
   const searchedAndFiltered = searchQuery.trim()
-    ? categoryFiltered.filter((note) => {
-        const query = searchQuery.toLowerCase();
-        const titleMatch = (note.title || '').toLowerCase().includes(query);
-        const contentMatch = (note.content || '').toLowerCase().includes(query);
-        return titleMatch || contentMatch;
-      })
-    : categoryFiltered;
+  ? notes.filter((note) => {
+      const query = searchQuery.toLowerCase();
+      const titleMatch = (note.title || '').toLowerCase().includes(query);
+      const contentMatch = (note.content || '').toLowerCase().includes(query);
+      return titleMatch || contentMatch;
+    })
+  : categoryFiltered;
 
   const filteredNotes = [...searchedAndFiltered].sort((a, b) => {
     const aPinned = a.is_pinned === 1 || a.is_pinned === true;
@@ -206,72 +271,82 @@ const categoryFiltered = notes.filter((note) => {
 
   return (
     <div className="w-full pl-3 pr-2">
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-4xl font-extrabold text-[#7570b8] tracking-tight">NotesApp</h1>
-          <p className="text-base text-md text-purple-700 mt-5">Organize your thoughts, ideas, and tasks seamlessly.</p>
-        </div>
-        <button
-          onClick={() => {
-            setSelectedNote(null);
-            setIsModalOpen(true);
-          }}
-          style={{ backgroundColor: '#7C77C6' }}
-          className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-base font-bold text-white shadow-md hover:opacity-95 transition-all focus:outline-none focus:ring-2 focus:ring-[#7C77C6] focus:ring-offset-2 shrink-0"
-        >
-          <FiPlus className="text-xl" /> Create Note
-        </button>
-      </div>
-
+      
       {error && <div className="mb-6 rounded-xl bg-red-50 border border-red-200 p-4 text-base text-red-700 shadow-sm">{error}</div>}
 
-      <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-        <div className="w-full lg:max-w-md relative">
-          <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={handleSearchChange}
-            placeholder="Search notes by title or content..."
-            className="w-full rounded-xl border border-gray-200 pl-11 pr-4.5 py-3 text-base bg-gray-50/50 focus:bg-white focus:border-[#7C77C6] focus:outline-none focus:ring-2 focus:ring-[#7C77C6]/20 transition-all"
-          />
-        </div>
+ <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+  <div className="flex flex-wrap items-center gap-4">
+    <div className="flex flex-wrap gap-2.5">
+          {['all', 'pinned', 'archived'].map((tab) => (
+        <button
+          key={tab}
+          onClick={() => handleFilterChange(tab)}
+          style={filter === tab ? { backgroundColor: '#7C77C6' } : {}}
+          className={`rounded-xl px-5 py-2.5 text-base font-semibold capitalize transition-all ${
+            filter === tab
+              ? 'text-white shadow-md'
+              : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100'
+          }`}
+        >
+          {tab}
+        </button>
+      ))}
+    </div>
+    <select
+      value={sortOrder}
+      onChange={(e) => setSortOrder(e.target.value)}
+      className="rounded-xl border border-gray-200 px-4.5 py-2.5 text-base font-semibold bg-gray-50 text-gray-700 focus:outline-none focus:border-[#7C77C6]"
+    >
+      <option value="" disabled>Sort Notes</option>
+      <option value="newest">Newest to Oldest</option>
+      <option value="oldest">Oldest to Newest</option>
+      <option value="az">Alphabetical (A-Z)</option>
+      <option value="za">Alphabetical (Z-A)</option>
+    </select>
+  </div>
 
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex flex-wrap gap-2.5">
-            {['all', 'pinned', 'archived'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setFilter(tab)}
-                style={filter === tab ? { backgroundColor: '#7C77C6' } : {}}
-                className={`rounded-xl px-5 py-2.5 text-base font-semibold capitalize transition-all ${
-                  filter === tab
-                    ? 'text-white shadow-md'
-                    : 'bg-gray-50 text-gray-600 border border-gray-200 hover:bg-gray-100'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-<select
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value)}
-            className="rounded-xl border border-gray-200 px-4.5 py-2.5 text-base font-semibold bg-gray-50 text-gray-700 focus:outline-none focus:border-[#7C77C6]"
-          >
-            <option value="" disabled>Sort Notes</option>
-            <option value="newest">Newest to Oldest</option>
-            <option value="oldest">Oldest to Newest</option>
-            <option value="az">Alphabetical (A-Z)</option>
-            <option value="za">Alphabetical (Z-A)</option>
-          </select>
-        </div>
-      </div>
+<div className="flex items-center gap-3">
+ <input
+  type="file"
+  accept=".json,application/json,.txt,text/plain,.md,text/markdown"
+  ref={fileInputRef}
+  onChange={handleImportFileChange}
+  className="hidden"
+/>
+
+  <button
+    onClick={handleImportClick}
+    className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-base font-bold text-[#7C77C6] bg-white border-2 border-[#7C77C6]/30 hover:bg-[#7C77C6]/10 transition-all shrink-0"
+    title="Import notes from a JSON file"
+  >
+    <FiUpload className="text-xl" /> Import
+  </button>
+
+  <button
+    onClick={handleExportNotes}
+    className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-base font-bold text-[#7C77C6] bg-white border-2 border-[#7C77C6]/30 hover:bg-[#7C77C6]/10 transition-all shrink-0"
+    title="Export all notes as a JSON file"
+  >
+    <FiDownload className="text-xl" /> Export
+  </button>
+
+  <button
+    onClick={() => {
+      setSelectedNote(null);
+      setIsModalOpen(true);
+    }}
+    style={{ backgroundColor: '#7C77C6' }}
+    className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-base font-bold text-white shadow-md hover:opacity-95 transition-all focus:outline-none focus:ring-2 focus:ring-[#7C77C6] focus:ring-offset-2 shrink-0"
+  >
+    <FiPlus className="text-xl" /> Create Note
+  </button>
+</div>
+</div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {filteredNotes.map((note) => {
-          const colorIndex = noteColors[note.id] !== undefined ? noteColors[note.id] : 0;
-          const currentPalette = THEMED_PASTEL_PALETTES[colorIndex % THEMED_PASTEL_PALETTES.length];
+        const colorIndex = noteColors[note.id] ;
+        const currentPalette = THEMED_PASTEL_PALETTES[colorIndex % THEMED_PASTEL_PALETTES.length];
 
           return (
             <div
@@ -392,4 +467,9 @@ const categoryFiltered = notes.filter((note) => {
   );
 }
 
+Dashboard.propTypes = {
+  searchQuery: PropTypes.string,
+  filter: PropTypes.oneOf(['all', 'pinned', 'archived']),
+  onFilterChange: PropTypes.func,
+};
 export default Dashboard;

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -26,7 +27,6 @@ jest.mock('../../services/noteService', () => ({
     deleteNote: jest.fn(),
     togglePin: jest.fn(),
     toggleArchive: jest.fn(),
-    searchNotes: jest.fn(),
   },
 }));
 
@@ -42,6 +42,14 @@ jest.mock('react-quill-new', () => ({
   ),
 }));
 
+beforeEach(() => {
+  jest.clearAllMocks();
+  jest.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+});
+
+afterEach(() => {
+  jest.restoreAllMocks();
+});
 describe('Dashboard Interactions and Edge Cases', () => {
   const mockNotes = [
     {
@@ -114,165 +122,11 @@ describe('Dashboard Interactions and Edge Cases', () => {
     });
   });
 
-  test('handles color update, color update failure, and search empty/error fallback branches', async () => {
-    noteService.getNotes.mockResolvedValue(mockNotes);
-    noteService.updateNote.mockResolvedValue({});
-    noteService.searchNotes.mockRejectedValueOnce({});
-
-    render(<Dashboard />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Second Note')).toBeInTheDocument();
-    });
-
-    const paletteButtons = screen.getAllByTitle('Change Color');
-    fireEvent.click(paletteButtons[0]);
-
-    await waitFor(() => {
-      const lavenderBtn = screen.getByTitle('Lavender');
-      expect(lavenderBtn).toBeInTheDocument();
-      fireEvent.click(lavenderBtn);
-    });
-
-    fireEvent.click(paletteButtons[0]);
-
-    await waitFor(() => {
-      const lavenderBtn = screen.getByTitle('Lavender');
-      expect(lavenderBtn).toBeInTheDocument();
-      fireEvent.click(lavenderBtn);
-    });
-
-    const searchInput = screen.getByPlaceholderText(/search notes by title or content/i);
-    fireEvent.change(searchInput, { target: { value: '   ' } });
-    
-    await waitFor(() => {
-      expect(noteService.getNotes).toHaveBeenCalled();
-    });
-
-    fireEvent.change(searchInput, { target: { value: 'TriggerError' } });
-    await waitFor(() => {
-      expect(screen.getByText('Failed to search notes')).toBeInTheDocument();
-    });
-  });
-
-  test('explicitly covers search whitespace, search error fallback, and note palette branches', async () => {
-    const mockNotesData = [
-      {
-        id: 1,
-        title: 'Alpha Note',
-        content: 'Content Alpha',
-        is_pinned: 0,
-        is_archived: false,
-        updated_at: '2026-06-01T10:00:00Z',
-      },
-    ];
-
-    noteService.getNotes.mockResolvedValue(mockNotesData);
-
-    render(<Dashboard />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Alpha Note')).toBeInTheDocument();
-    });
-
-    const paletteBtn = screen.getByTitle('Change Color');
-    fireEvent.click(paletteBtn);
-
-    await waitFor(() => {
-      const lavenderOption = screen.getByTitle('Lavender');
-      expect(lavenderOption).toBeInTheDocument();
-      fireEvent.click(lavenderOption);
-    });
-
-    const searchInput = screen.getByPlaceholderText(/search notes by title or content/i);
-    
-    noteService.searchNotes.mockResolvedValueOnce(mockNotesData);
-    fireEvent.change(searchInput, { target: { value: 'Alpha' } });
-    
-    await waitFor(() => {
-      expect(noteService.searchNotes).toHaveBeenCalledWith({ q: 'Alpha' });
-    });
-
-    fireEvent.change(searchInput, { target: { value: '   ' } });
-    await waitFor(() => {
-      expect(noteService.getNotes).toHaveBeenCalledTimes(2);
-    });
-
-    noteService.searchNotes.mockRejectedValueOnce({});
-    fireEvent.change(searchInput, { target: { value: 'TriggerError' } });
-
-    await waitFor(() => {
-      expect(screen.getByText('Failed to search notes')).toBeInTheDocument();
-    });
-  });
-
-  test('fully covers search reset, search error catch, and color selection branches', async () => {
-    const mockNotesList = [
-      {
-        id: 1,
-        title: 'Dashboard Note',
-        content: 'Sample text',
-        is_pinned: 1,
-        is_archived: false,
-        updated_at: '2026-06-01T10:00:00Z',
-      },
-    ];
-
-    noteService.getNotes.mockResolvedValue(mockNotesList);
-
-    render(<Dashboard />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Dashboard Note')).toBeInTheDocument();
-    });
-
-    const paletteTrigger = screen.getByTitle('Change Color');
-    fireEvent.click(paletteTrigger);
-
-    await waitFor(() => {
-      const lavenderBtn = screen.getByTitle('Lavender');
-      expect(lavenderBtn).toBeInTheDocument();
-      fireEvent.click(lavenderBtn);
-    });
-
-    const searchField = screen.getByPlaceholderText(/search notes by title or content/i);
-    noteService.searchNotes.mockResolvedValueOnce(mockNotesList);
-    
-    fireEvent.change(searchField, { target: { value: 'Dashboard' } });
-    await waitFor(() => {
-      expect(noteService.searchNotes).toHaveBeenCalledWith({ q: 'Dashboard' });
-    });
-
-    fireEvent.change(searchField, { target: { value: '     ' } });
-    await waitFor(() => {
-      expect(noteService.getNotes).toHaveBeenCalledTimes(2);
-    });
-
-    noteService.searchNotes.mockRejectedValueOnce({});
-    fireEvent.change(searchField, { target: { value: 'BadQuery' } });
-
-    await waitFor(() => {
-      expect(screen.getByText('Failed to search notes')).toBeInTheDocument();
-    });
-  });
-
   describe('Dashboard - remaining error and date fallback branches', () => {
     test('handles fetchNotes error when response has no error message', async () => {
       noteService.getNotes.mockRejectedValueOnce({});
       render(<Dashboard />);
       await waitFor(() => expect(screen.getByText('Failed to fetch notes')).toBeInTheDocument());
-    });
-
-    test('handles searchNotes error when response has no error message', async () => {
-      noteService.getNotes.mockResolvedValue([]);
-      noteService.searchNotes.mockRejectedValueOnce({});
-      render(<Dashboard />);
-      await waitFor(() => expect(screen.getByText('No notes found.')).toBeInTheDocument());
-      
-      fireEvent.change(screen.getByPlaceholderText(/search notes by title or content/i), {
-        target: { value: 'test' },
-      });
-      await waitFor(() => expect(screen.getByText('Failed to search notes')).toBeInTheDocument());
     });
 
     test('handles handleDelete error when response has no error message', async () => {
@@ -298,4 +152,26 @@ describe('Dashboard Interactions and Edge Cases', () => {
       await waitFor(() => expect(screen.getByText('No Updated At')).toBeInTheDocument());
     });
   });
+});
+
+test('newest/oldest sort falls back to created_at for notes missing updated_at', async () => {
+  noteService.getNotes.mockResolvedValue([
+    { id: 1, title: 'No Updated A', content: 'x', is_pinned: 0, is_archived: 0, created_at: '2026-01-01T10:00:00Z' },
+    { id: 2, title: 'No Updated B', content: 'x', is_pinned: 0, is_archived: 0, created_at: '2026-06-01T10:00:00Z' },
+  ]);
+  render(<Dashboard />);
+  await waitFor(() => expect(screen.getByText('No Updated A')).toBeInTheDocument());
+
+  const sortSelect = screen.getByDisplayValue('Sort Notes');
+fireEvent.change(sortSelect, { target: { value: 'newest' } });
+await waitFor(() => {
+  const titles = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
+  expect(titles.indexOf('No Updated B')).toBeLessThan(titles.indexOf('No Updated A'));
+});
+
+fireEvent.change(sortSelect, { target: { value: 'oldest' } });
+await waitFor(() => {
+  const titles = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
+  expect(titles.indexOf('No Updated A')).toBeLessThan(titles.indexOf('No Updated B'));
+});
 });

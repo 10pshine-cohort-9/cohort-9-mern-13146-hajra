@@ -74,6 +74,15 @@ describe('NoteModal Component Comprehensive Tests', () => {
       />
     );
     expect(screen.getByDisplayValue('D1')).toBeInTheDocument();
+
+    rerender(
+    <NoteModal 
+      {...defaultProps} 
+      initialData={{ id: 4 }} 
+    />
+  );
+  expect(screen.getByPlaceholderText('Note title')).toHaveValue('');
+  expect(screen.getByTestId('mock-quill-editor')).toHaveValue('');
   });
 
   test('handles input changes for title, content, color buttons, and form submission', async () => {
@@ -201,4 +210,37 @@ describe('NoteModal Component Comprehensive Tests', () => {
       ).toBeInTheDocument();
     });
   });
+  
+  
+
+test('shows generic save error when server error has no message', async () => {
+  const onSave = jest.fn().mockRejectedValue({ response: { data: {} } });
+  render(<NoteModal isOpen={true} onClose={jest.fn()} onSave={onSave} initialData={null} />);
+  fireEvent.change(screen.getByPlaceholderText('Note title'), { target: { value: 'Test' } });
+  fireEvent.click(screen.getByRole('button', { name: /save note/i }));
+  try {
+    await screen.findByText('Failed to save note. Please try again.');
+  } catch (error) {
+    throw new Error(`Expected fallback error message was not found: ${error.message}`);
+  }
+});
+
+test('unchecking Archive does not touch pinned state', async () => {
+  render(
+    <NoteModal
+      isOpen={true}
+      onClose={jest.fn()}
+      onSave={jest.fn()}
+      initialData={{ id: 1, title: 'Archived Note', content: 'x', is_pinned: true, is_archived: true }}
+    />
+  );
+  const archiveCheckbox = screen.getByLabelText(/archive note/i);
+  const pinCheckbox = screen.getByLabelText(/pin note/i);
+  expect(archiveCheckbox).toBeChecked();
+  expect(pinCheckbox).toBeChecked();
+
+  fireEvent.click(archiveCheckbox);
+  expect(archiveCheckbox).not.toBeChecked();
+  expect(pinCheckbox).toBeChecked();
+});
 });
