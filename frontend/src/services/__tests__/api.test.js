@@ -123,4 +123,5 @@ describe("Base Configuration", () => {
       expect(localStorage.getItem("token")).toBe("valid-token");
     });
   });
+ 
 });

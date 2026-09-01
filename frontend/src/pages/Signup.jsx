@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useAuthSubmit } from "../hooks/useAuthSubmit";
 import { useAuth } from "../context/authContext";
 import Input from "../components/common/Input";
 import PasswordField from "../components/common/PasswordField";
@@ -11,39 +12,32 @@ function Signup() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const { signup } = useAuth();
-  const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
+const { error, setError, isSubmitting, submit } = useAuthSubmit({
+  getDefaultErrorMessage: () => "Registration failed.",
+  getCatchErrorMessage: (err) =>
+    err.response?.data?.message || "Registration failed. Please try again.",
+});
 
-    if (!name || !email || !password) {
-      setError("All fields are required.");
-      return;
-    }
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters long.");
-      return;
-    }
+  if (!name || !email || !password) {
+    setError("All fields are required.");
+    return;
+  }
 
-    setIsSubmitting(true);
-    try {
-      const res = await signup(name, email, password);
-      if (res.success) {
-        navigate("/dashboard"); 
-      } else {
-        setError(res.message || "Registration failed.");
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || "Registration failed. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  if (password.length < 6) {
+    setError("Password must be at least 6 characters long.");
+    return;
+  }
+
+  await submit(() => signup(name, email, password));
+};
+
 
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-12 bg-[#F5F6FA]">
@@ -75,7 +69,7 @@ function Signup() {
       </div>
 
       <div className="lg:col-span-9 flex items-center justify-center p-6 sm:p-12">
-        <div className="w-full max-w-3xl bg-purple-300/10 backdrop-blur-3xl rounded-3xl shadow-[0_8px_32px_0_rgba(124,119,198,0.25)] border-purple-200/50) border border-purple-300 p-12 sm:p-16">
+        <div className="w-full max-w-3xl bg-purple-300/10 backdrop-blur-3xl rounded-3xl shadow-[0_8px_32px_0_rgba(124,119,198,0.25)] border-purple-200/50 border border-purple-300 p-12 sm:p-16">
           <div className="text-center mb-10">
             <h1 className="text-4xl sm:text-5xl font-extrabold text-[#3F3A85]">Create an Account</h1>
             <p className="text-base sm:text-lg text-[#5A55A3] mt-4">Sign up to get started with NotesApp</p>
@@ -137,7 +131,7 @@ function Signup() {
                 <Button 
                   type="submit" 
                   disabled={isSubmitting}
-                  className="md: text-xl text-lg w-full py-4 bg-[#7C77C6] hover:bg-[#6c67b5] text-white font-semibold  rounded-xl shadow-xl shadow-purple-300 transition-all duration-200"
+                  className="md:text-xl text-lg w-full py-4 bg-[#7C77C6] hover:bg-[#6c67b5] text-white font-semibold  rounded-xl shadow-xl shadow-purple-300 transition-all duration-200"
                 >
                   Sign Up
                 </Button>
