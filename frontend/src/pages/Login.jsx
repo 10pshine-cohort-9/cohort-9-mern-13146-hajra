@@ -17,7 +17,7 @@ function Login() {
 const { error, setError, isSubmitting, submit } = useAuthSubmit({
   getDefaultErrorMessage: () => "Failed to sign in.",
   getCatchErrorMessage: (err) =>
-    err.response?.data?.message || err.message || "An error occurred during sign in.",
+    err?.response?.data?.message || err?.message || "An error occurred during sign in.",
 });
 
 const handleSubmit = async (e) => {

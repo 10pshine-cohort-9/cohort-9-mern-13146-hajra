@@ -219,7 +219,11 @@ test('shows generic save error when server error has no message', async () => {
   fireEvent.change(screen.getByPlaceholderText('Note title'), { target: { value: 'Test' } });
   fireEvent.click(screen.getByRole('button', { name: /save note/i }));
 
-  await screen.findByText('Failed to save note. Please try again.');
+  try {
+    await screen.findByText('Failed to save note. Please try again.');
+  } catch (error) {
+    throw new Error(`Expected fallback error message was not found: ${error.message}`);
+  }
 });
 
 test('unchecking Archive does not touch pinned state', async () => {
