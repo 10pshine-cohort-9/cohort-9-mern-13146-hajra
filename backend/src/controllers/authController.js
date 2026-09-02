@@ -2,17 +2,10 @@ const logger = require("../logger/logger");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const userModel = require("../models/userModel");
+const getJwtSecret = require("../utils/jwtSecret");
 const pool = require("../config/db");
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function getJwtSecret() {
-    const secret = process.env.JWT_SECRET || (process.env.NODE_ENV === "test" ? "testsecret" : null);
-    if (!secret) {
-        throw new Error("JWT_SECRET environment variable is not defined.");
-    }
-    return secret;
-}
 
 async function register(req, res, next) {
     try {
@@ -237,5 +230,6 @@ module.exports = {
     register,
     login,
     getProfile,
-    updateProfile
+    updateProfile,
+    getJwtSecret
 };
