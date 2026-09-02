@@ -253,6 +253,39 @@ it("should not allow a user to update another user's note", async () => {
     expect(originalNote.content).to.equal("Original Private Content");
 });
 
+it("should update only the fields provided, leaving others unchanged", async () => {
+    const testUser = {
+        name: "Partial Update User",
+        email: `partial_update_${Date.now()}@example.com`,
+        password: "hashed_test_password",
+        profile_picture: null
+    };
+
+    testUserId = await createUser(testUser);
+
+    const noteId = await createNote({
+        user_id: testUserId,
+        title: "Original Title",
+        content: "Original Content"
+    });
+
+    testNoteIds.push(noteId);
+
+    const affectedRows = await updateNote(
+        noteId,
+        testUserId,
+        { is_pinned: 1 }
+    );
+
+    expect(affectedRows).to.equal(1);
+
+    const updatedNote = await getNoteById(noteId, testUserId);
+
+    expect(updatedNote.title).to.equal("Original Title");
+    expect(updatedNote.content).to.equal("Original Content");
+    expect(updatedNote.is_pinned).to.equal(1);
+});
+
 it("should delete a user's note", async () => {
     const testUser = {
         name: "Delete Note User",

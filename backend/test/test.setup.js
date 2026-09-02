@@ -1,7 +1,6 @@
 const pool = require("../src/config/db");
 
 exports.mochaHooks = {
-  // Clear test users once before starting the test suite (optional, ensures clean slate)
   beforeAll: async function () {
     try {
       await pool.query(
@@ -12,7 +11,6 @@ exports.mochaHooks = {
     }
   },
 
-  // Clear test users and close pool completely ONLY after ALL tests are finished
   afterAll: async function () {
     try {
       await pool.query(
