@@ -1,44 +1,35 @@
 const pool = require("../config/db");
-const logger = require("../logger/logger");
+const withErrorLogging = require("../utils/withErrorLogging");
 
 async function createUser({ name, email, password }) {
-    try {
+    return withErrorLogging("createUser", async () => {
         const [result] = await pool.execute(
             `INSERT INTO users (name, email, password) VALUES (?, ?, ?)`,
             [name, email, password]
         );
         return result.insertId;
-    } catch (error) {
-        logger.error(`Error in createUser: ${error.message}`);
-        throw error;
-    }
+    });
 }
 
 async function findUserByEmail(email) {
-    try {
+    return withErrorLogging("findUserByEmail", async () => {
         const [rows] = await pool.execute("SELECT * FROM users WHERE email = ?", [email]);
         return rows[0] || null;
-    } catch (error) {
-        logger.error(`Error in findUserByEmail: ${error.message}`);
-        throw error;
-    }
+    });
 }
 
 async function findUserById(userId) {
-    try {
+    return withErrorLogging(`findUserById for userId ${userId}`, async () => {
         const [rows] = await pool.execute(
             `SELECT * FROM users WHERE id = ?`,
             [userId]
         );
         return rows[0] || null;
-    } catch (error) {
-        logger.error(`Error in findUserById for userId ${userId}: ${error.message}`);
-        throw error;
-    }
+    });
 }
 
 async function updateUserProfile(userId, { name, profile_picture, password }) {
-    try {
+    return withErrorLogging("updateUserProfile", async () => {
         const [result] = await pool.execute(
             `UPDATE users 
              SET name = COALESCE(?, name), 
@@ -53,35 +44,27 @@ async function updateUserProfile(userId, { name, profile_picture, password }) {
             ]
         );
         return result.affectedRows;
-    } catch (error) {
-        logger.error(`Error in updateUserProfile: ${error.message}`);
-        throw error;
-    }
+    });
 }
+
 async function updateUserPassword(userId, hashedPassword) {
-    try {
+    return withErrorLogging(`updateUserPassword for userId ${userId}`, async () => {
         const [result] = await pool.execute(
             `UPDATE users SET password = ? WHERE id = ?`,
             [hashedPassword, userId]
         );
         return result.affectedRows;
-    } catch (error) {
-        logger.error(`Error in updateUserPassword for userId ${userId}: ${error.message}`);
-        throw error;
-    }
+    });
 }
 
 async function deleteUser(userId) {
-    try {
+    return withErrorLogging(`deleteUser for userId ${userId}`, async () => {
         const [result] = await pool.execute(
             `DELETE FROM users WHERE id = ?`,
             [userId]
         );
         return result.affectedRows;
-    } catch (error) {
-        logger.error(`Error in deleteUser for userId ${userId}: ${error.message}`);
-        throw error;
-    }
+    });
 }
 
 async function updateUser(userId, data) {

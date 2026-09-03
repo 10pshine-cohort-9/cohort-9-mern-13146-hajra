@@ -1,73 +1,53 @@
 const pool = require("../config/db");
-const logger = require("../logger/logger");
+const withErrorLogging = require("../utils/withErrorLogging");
 
 async function createNote(noteData) {
-    try {
+    return withErrorLogging("createNote", async () => {
         if (!noteData || typeof noteData !== "object") {
             throw new Error("Note data is required");
         }
-
         const { user_id, title, content } = noteData;
-
         if (!Number.isInteger(user_id) || user_id <= 0) {
             throw new Error("Valid user_id is required");
         }
-
         if (typeof title !== "string" || title.trim() === "") {
             throw new Error("Title is required");
         }
-
         if (typeof content !== "string" || content.trim() === "") {
             throw new Error("Content is required");
         }
-
         const [result] = await pool.execute(
             `INSERT INTO notes (user_id, title, content) VALUES (?, ?, ?)`,
             [user_id, title.trim(), content.trim()]
         );
-
         return result.insertId;
-    } catch (error) {
-        logger.error(`Error in createNote: ${error.message}`);
-        throw error;
-    }
+    });
 }
-
 async function getNotesByUser(userId) {
-    try {
+    return withErrorLogging(`getNotesByUser for userId ${userId}`, async () => {
         const [rows] = await pool.execute(
             `SELECT id, user_id, title, content, is_pinned, is_archived, created_at, updated_at
-             FROM notes
-             WHERE user_id = ?
-             ORDER BY updated_at DESC`,
+             FROM notes WHERE user_id = ? ORDER BY updated_at DESC`,
             [userId]
         );
         return rows;
-    } catch (error) {
-        logger.error(`Error in getNotesByUser for userId ${userId}: ${error.message}`);
-        throw error;
-    }
+    });
 }
 
 async function getNoteById(noteId, userId) {
-    try {
+    return withErrorLogging(`getNoteById for noteId ${noteId}, userId ${userId}`, async () => {
         const [rows] = await pool.execute(
             `SELECT id, user_id, title, content, is_pinned, is_archived, created_at, updated_at
-             FROM notes
-             WHERE id = ? AND user_id = ?`,
+             FROM notes WHERE id = ? AND user_id = ?`,
             [noteId, userId]
         );
         return rows[0] || null;
-    } catch (error) {
-        logger.error(`Error in getNoteById for noteId ${noteId}, userId ${userId}: ${error.message}`);
-        throw error;
-    }
+    });
 }
 
 async function updateNote(noteId, userId, noteData) {
-    try {
+    return withErrorLogging(`updateNote for noteId ${noteId}, userId ${userId}`, async () => {
         const { title, content, is_pinned, is_archived } = noteData;
-
         const [result] = await pool.execute(
             `UPDATE notes
              SET title = COALESCE(?, title),
@@ -84,29 +64,22 @@ async function updateNote(noteId, userId, noteData) {
                 userId
             ]
         );
-
         return result.affectedRows;
-    } catch (error) {
-        logger.error(`Error in updateNote for noteId ${noteId}, userId ${userId}: ${error.message}`);
-        throw error;
-    }
+    });
 }
 
 async function deleteNote(noteId, userId) {
-    try {
+    return withErrorLogging(`deleteNote for noteId ${noteId}, userId ${userId}`, async () => {
         const [result] = await pool.execute(
             `DELETE FROM notes WHERE id = ? AND user_id = ?`,
             [noteId, userId]
         );
         return result.affectedRows;
-    } catch (error) {
-        logger.error(`Error in deleteNote for noteId ${noteId}, userId ${userId}: ${error.message}`);
-        throw error;
-    }
+    });
 }
 
 async function togglePin(noteId, userId, isPinned) {
-    try {
+    return withErrorLogging(`togglePin for noteId ${noteId}, userId ${userId}`, async () => {
         let result;
         if (isPinned !== undefined) {
             [result] = await pool.execute(
@@ -120,14 +93,11 @@ async function togglePin(noteId, userId, isPinned) {
             );
         }
         return result.affectedRows;
-    } catch (error) {
-        logger.error(`Error in togglePin for noteId ${noteId}, userId ${userId}: ${error.message}`);
-        throw error;
-    }
+    });
 }
 
 async function toggleArchive(noteId, userId, isArchived) {
-    try {
+    return withErrorLogging(`toggleArchive for noteId ${noteId}, userId ${userId}`, async () => {
         let result;
         if (isArchived !== undefined) {
             [result] = await pool.execute(
@@ -141,46 +111,33 @@ async function toggleArchive(noteId, userId, isArchived) {
             );
         }
         return result.affectedRows;
-    } catch (error) {
-        logger.error(`Error in toggleArchive for noteId ${noteId}, userId ${userId}: ${error.message}`);
-        throw error;
-    }
+    });
 }
 
 async function getPinnedNotes(userId) {
-    try {
+    return withErrorLogging(`getPinnedNotes for userId ${userId}`, async () => {
         const [rows] = await pool.execute(
             `SELECT id, user_id, title, content, is_pinned, is_archived, created_at, updated_at
-             FROM notes
-             WHERE user_id = ? AND is_pinned = TRUE
-             ORDER BY updated_at DESC`,
+             FROM notes WHERE user_id = ? AND is_pinned = TRUE ORDER BY updated_at DESC`,
             [userId]
         );
         return rows;
-    } catch (error) {
-        logger.error(`Error in getPinnedNotes for userId ${userId}: ${error.message}`);
-        throw error;
-    }
+    });
 }
 
 async function getArchivedNotes(userId) {
-    try {
+    return withErrorLogging(`getArchivedNotes for userId ${userId}`, async () => {
         const [rows] = await pool.execute(
             `SELECT id, user_id, title, content, is_pinned, is_archived, created_at, updated_at
-             FROM notes
-             WHERE user_id = ? AND is_archived = TRUE
-             ORDER BY updated_at DESC`,
+             FROM notes WHERE user_id = ? AND is_archived = TRUE ORDER BY updated_at DESC`,
             [userId]
         );
         return rows;
-    } catch (error) {
-        logger.error(`Error in getArchivedNotes for userId ${userId}: ${error.message}`);
-        throw error;
-    }
+    });
 }
 
 async function searchNotes(userId, { q, pinned, archived, sort }) {
-    try {
+    return withErrorLogging(`searchNotes for userId ${userId}`, async () => {
         let querySql = `
             SELECT id, user_id, title, content, is_pinned, is_archived, created_at, updated_at
             FROM notes
@@ -204,27 +161,24 @@ async function searchNotes(userId, { q, pinned, archived, sort }) {
             params.push(archived === "true" || archived === "1" || archived === true ? 1 : 0);
         }
 
-   const sortMap = {
-    "title_asc": "title ASC",
-    "title_desc": "title DESC",
-    "oldest": "created_at ASC",
-    "created_asc": "created_at ASC",
-    "newest": "created_at DESC",
-    "created_desc": "created_at DESC",
-    "updated_asc": "updated_at ASC",
-    "updated_desc": "updated_at DESC"
-};
+        const sortMap = {
+            "title_asc": "title ASC",
+            "title_desc": "title DESC",
+            "oldest": "created_at ASC",
+            "created_asc": "created_at ASC",
+            "newest": "created_at DESC",
+            "created_desc": "created_at DESC",
+            "updated_asc": "updated_at ASC",
+            "updated_desc": "updated_at DESC"
+        };
 
-const hasOwnSort = Object.prototype.hasOwnProperty.call(sortMap, sort);
-const sortClause = hasOwnSort ? sortMap[sort] : "updated_at DESC";
-querySql += ` ORDER BY ${sortClause}`;
+        const hasOwnSort = Object.prototype.hasOwnProperty.call(sortMap, sort);
+        const sortClause = hasOwnSort ? sortMap[sort] : "updated_at DESC";
+        querySql += ` ORDER BY ${sortClause}`;
 
         const [rows] = await pool.execute(querySql, params);
         return rows;
-    } catch (error) {
-        logger.error(`Error in searchNotes for userId ${userId}: ${error.message}`);
-        throw error;
-    }
+    });
 }
 
 module.exports = {

@@ -3,3 +3,5 @@ node_modules
 
 # Uploaded files
 src/uploads/
+.nyc_output/
+coverage/

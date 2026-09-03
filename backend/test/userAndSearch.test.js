@@ -75,6 +75,21 @@ describe("User & Note Search API Endpoints", () => {
             expect(res.body.success).to.be.true;
             expect(res.body.data.name).to.equal("Updated PR5 User");
         });
+                it("should return 400 when updating profile with an empty name", async () => {
+            const res = await request(app)
+                .put("/api/users/profile")
+                .set("Authorization", `Bearer ${token}`)
+                .send({ name: "   " });
+            expect(res.status).to.equal(400);
+        });
+
+        it("should return 400 when updating profile with a short password", async () => {
+            const res = await request(app)
+                .put("/api/users/profile")
+                .set("Authorization", `Bearer ${token}`)
+                .send({ password: "123" });
+            expect(res.status).to.equal(400);
+        });
     });
 
     describe("PUT /api/users/change-password", () => {
@@ -86,6 +101,18 @@ describe("User & Note Search API Endpoints", () => {
                     currentPassword: "Password123!",
                     newPassword: "NewPassword123!"
                 });
+
+            expect(res.status).to.equal(200);
+            expect(res.body.success).to.be.true;
+        });
+    });
+
+        describe("PUT /api/users/profile - password update", () => {
+        it("should update the profile password successfully", async () => {
+            const res = await request(app)
+                .put("/api/users/profile")
+                .set("Authorization", `Bearer ${token}`)
+                .send({ password: "FinalPassword123!" });
 
             expect(res.status).to.equal(200);
             expect(res.body.success).to.be.true;
@@ -124,5 +151,36 @@ describe("User & Note Search API Endpoints", () => {
             expect(res.body.success).to.be.true;
             expect(res.body.data[0].title).to.equal("Alpha Meeting Notes");
         });
+        it("should filter notes by unpinned status", async () => {
+    const res = await request(app)
+        .get("/api/notes/search?pinned=false")
+        .set("Authorization", `Bearer ${token}`);
+
+    expect(res.status).to.equal(200);
+    expect(res.body.success).to.be.true;
+    expect(res.body.data.length).to.equal(2);
+});
+
+it("should filter notes by archived status", async () => {
+    const res = await request(app)
+        .get("/api/notes/search?archived=true")
+        .set("Authorization", `Bearer ${token}`);
+
+    expect(res.status).to.equal(200);
+    expect(res.body.success).to.be.true;
+    expect(res.body.data.length).to.equal(1);
+    expect(res.body.data[0].title).to.equal("Beta Archived Note");
+});
+
+it("should filter notes by unarchived status", async () => {
+    const res = await request(app)
+        .get("/api/notes/search?archived=false")
+        .set("Authorization", `Bearer ${token}`);
+
+    expect(res.status).to.equal(200);
+    expect(res.body.success).to.be.true;
+    expect(res.body.data.length).to.equal(2);
+});
     });
+    
 });

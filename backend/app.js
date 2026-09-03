@@ -43,9 +43,15 @@ app.get("/api/health", (req, res) => {
     });
 });
 
+/* istanbul ignore next -- test-only routes, false branch is production and not exercised in test suite */
 if (process.env.NODE_ENV === "test") {
+    app.get("/__test__/error-after-headers", (req, res, next) => {
+        res.flushHeaders();
+        next(new Error("Test error after headers sent"));
+    });
+
     app.get("/__test__/error", (req, res, next) => {
-        next(new Error("Test application error"));
+        next(new Error("Simulated unhandled error"));
     });
 }
 
