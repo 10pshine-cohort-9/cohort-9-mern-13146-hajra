@@ -4,6 +4,8 @@ import Input from "../components/common/Input";
 import Button from "../components/common/Button";
 import Loader from "../components/common/Loader";
 
+const API_ORIGIN = "http://localhost:5000";
+
 function Profile() {
   const { user, updateUserProfile } = useAuth();
   const [name, setName] = useState("");
@@ -37,7 +39,7 @@ useEffect(() => {
       if (user.profile_picture.startsWith("http")) {
         return user.profile_picture;
       }
-      return `http://localhost:5000${user.profile_picture}`;
+return `${API_ORIGIN}${user.profile_picture}`;
     }
     return null;
   };
@@ -76,7 +78,7 @@ useEffect(() => {
         setPassword("");
         setSelectedFile(null);
         if (res.data?.profile_picture) {
-          setPreviewUrl(`http://localhost:5000${res.data.profile_picture}`);
+setPreviewUrl(`${API_ORIGIN}${res.data.profile_picture}`);
         }
       } else {
         setError(res.message || "Failed to update profile.");
@@ -88,10 +90,10 @@ useEffect(() => {
     }
   };
   return (
-    <div className="min-h-[calc(100vh-5rem)] bg-[#F5F6FA] p-6 sm:p-10 flex justify-center items-start">
+<div className="w-full bg-[#F5F6FA] p-6 sm:p-10 flex justify-center items-start">  
       <div className="w-full max-w-3xl bg-white rounded-2xl shadow-sm border border-gray-200/60 overflow-hidden">
         
-        <div className="bg-gradient-to-r from-[#7C77C6]/15 via-[#7C77C6]/10 to-transparent p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-6 border-b border-gray-100">
+        <div className="bg-gradient-to-r from-[#7C77C6]/15 via-[#7C77C6]/10 to-transparent p-8 sm:p-8 flex flex-col sm:flex-row items-center gap-6 border-b border-gray-100">
           <div className="relative">
             {displayImageSrc ? (
               <img
@@ -106,11 +108,9 @@ useEffect(() => {
             )}
           </div>
           <div className="text-center sm:text-left">
-            <h1 className="text-2xl font-bold text-gray-800">{name || "User Profile"}</h1>
-            <p className="text-sm text-gray-500 mt-0.5">{email}</p>
-            <span className="inline-block mt-3 px-3 py-1 bg-[#7C77C6]/10 text-[#7C77C6] text-xs font-semibold rounded-full">
-              Active Member
-            </span>
+            <h1 className="text-2xl font-bold text-[#7C77C6]">{name || "User Profile"}</h1>
+            <p className="text-sm text-purple-500 mt-0.5">{email}</p>
+            
           </div>
         </div>
 
@@ -126,10 +126,10 @@ useEffect(() => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} data-testid="profile-form" className="space-y-6">
+          <form onSubmit={handleSubmit} data-testid="profile-form" className="space-y-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
-                <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                <label htmlFor="fullName" className="block text-sm font-medium text-[#635fa2]  mb-2">Full Name</label>
                 <div className="border border-gray-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#7C77C6] focus-within:border-transparent">
                   <Input
                     id="fullName"
@@ -137,26 +137,26 @@ useEffect(() => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     disabled={isSubmitting}
-                    className="w-full border-none focus:outline-none px-3 py-2"
+                    className="w-full border-none focus:outline-none px-3 py-2 text-[#635fa2] "
                   />
                 </div>
               </div>
               <div>
-                <label htmlFor="emailAddress" className="block text-sm font-medium text-gray-700 mb-2">Email Address (Locked)</label>
+                <label htmlFor="emailAddress" className="block text-sm font-medium text-[#635fa2]  mb-2">Email Address</label>
                 <div className="border border-gray-200 rounded-xl overflow-hidden bg-gray-50">
                   <Input
                     id="emailAddress"
                     type="email"
                     value={email}
                     disabled
-                    className="w-full border-none bg-gray-50 text-gray-500 cursor-not-allowed px-3 py-2"
+                    className="w-full border-none bg-gray-50 text-[#7C77C6] cursor-not-allowed px-3 py-2"
                   />
                 </div>
               </div>
             </div>
 
             <div>
-              <label htmlFor="profilePicture" className="block text-sm font-medium text-gray-700 mb-2">Profile Picture</label>
+              <label htmlFor="profilePicture" className="block text-sm font-medium text-[#635fa2]  mb-2">Profile Picture</label>
               <input
                 id="profilePicture"
                 type="file"
@@ -169,12 +169,12 @@ useEffect(() => {
                   }
                 }}
                 disabled={isSubmitting}
-                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-[#7C77C6]/10 file:text-[#7C77C6] hover:file:bg-[#7C77C6]/20 cursor-pointer border border-gray-300 rounded-xl p-2 bg-white"
+                className="block w-full text-sm text-[#7C77C6] file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-[#7C77C6]/10 file:text-[#7C77C6] hover:file:bg-[#7C77C6]/20 cursor-pointer border border-gray-300 rounded-xl p-2 bg-white"
               />
             </div>
 
             <div>
-              <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+              <label htmlFor="newPassword" className="block text-sm font-medium text-[#635fa2] mb-2">New Password</label>
               <div className="border border-gray-300 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#7C77C6] focus-within:border-transparent">
                 <Input
                   id="newPassword"

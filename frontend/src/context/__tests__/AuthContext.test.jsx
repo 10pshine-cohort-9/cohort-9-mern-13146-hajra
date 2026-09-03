@@ -340,5 +340,34 @@ it("handles errors gracefully during token/profile initialization in useEffect",
     expect(caughtError.message).toBe("Update failed");
   });
 
- 
+ it("skips profile fetching and sets loading to false when no token exists on mount", async () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+
+    const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>;
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    expect(authService.getProfile).not.toHaveBeenCalled();
+    expect(result.current.token).toBeNull();
+  });
+
+  it("updates profile_picture when the response explicitly includes it", async () => {
+  authService.updateProfile.mockResolvedValueOnce({
+    success: true,
+    data: { id: "1", name: "Hajra", email: "hajra@example.com", profile_picture: "/uploads/new-avatar.jpg" },
+  });
+
+  const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>;
+  const { result } = renderHook(() => useAuth(), { wrapper });
+
+  await act(async () => {
+    await result.current.updateUserProfile({ name: "Hajra" });
+  });
+
+  expect(result.current.user.profile_picture).toBe("/uploads/new-avatar.jpg");
+});
 });

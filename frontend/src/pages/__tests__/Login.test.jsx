@@ -120,4 +120,16 @@ it("handles generic login rejection fallback message", async () => {
       expect(screen.getByText(/network error|failed to sign in|an error occurred during sign in/i)).toBeInTheDocument();
     });
   });
+  it("shows the generic fallback message when the error has no message at all", async () => {
+  mockLogin.mockRejectedValueOnce({});
+  renderComponent();
+
+  fireEvent.change(screen.getByLabelText(/email/i), { target: { value: "test@example.com" } });
+  fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: "password123" } });
+  fireEvent.click(screen.getByRole("button", { name: /sign in/i }));
+
+  await waitFor(() => {
+    expect(screen.getByText("An error occurred during sign in.")).toBeInTheDocument();
+  });
+});
 });

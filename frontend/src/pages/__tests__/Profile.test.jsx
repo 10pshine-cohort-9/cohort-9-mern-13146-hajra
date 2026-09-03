@@ -237,6 +237,55 @@ it("clears success message on subsequent form submission", async () => {
     });
   });
 
-  
+  it("revokes the blob URL on unmount to avoid a memory leak", async () => {
+  global.URL.createObjectURL = jest.fn(() => "blob:http://localhost/mock-blob");
+  global.URL.revokeObjectURL = jest.fn();
 
+  const { unmount } = renderComponent();
+
+  const fileInput = screen.getByLabelText(/profile picture/i);
+  const file = new File(["dummy content"], "avatar.png", { type: "image/png" });
+  fireEvent.change(fileInput, { target: { files: [file] } });
+
+  await waitFor(() => {
+    expect(screen.getByAltText("Profile")).toHaveAttribute("src", "blob:http://localhost/mock-blob");
+  });
+
+  unmount();
+
+  expect(global.URL.revokeObjectURL).toHaveBeenCalledWith("blob:http://localhost/mock-blob");
+});
+
+it("includes the selected profile picture in the submitted form data", async () => {
+  mockUpdateUserProfile.mockResolvedValueOnce({ success: true });
+  global.URL.createObjectURL = jest.fn(() => "blob:http://localhost/mock-blob");
+  renderComponent();
+
+  const fileInput = screen.getByLabelText(/profile picture/i);
+  const file = new File(["dummy content"], "avatar.png", { type: "image/png" });
+  fireEvent.change(fileInput, { target: { files: [file] } });
+
+  await waitFor(() => {
+    expect(screen.getByAltText("Profile")).toHaveAttribute("src", "blob:http://localhost/mock-blob");
+  });
+
+  fireEvent.click(screen.getByRole("button", { name: /save changes/i }));
+
+  await waitFor(() => {
+    const formDataArg = mockUpdateUserProfile.mock.calls[0][0];
+    expect(formDataArg.get("profile_picture")).toBe(file);
+  });
+});
+
+
+it("does not attempt to generate a preview when the file selection is cancelled", () => {
+  const createObjectURLSpy = jest.fn();
+  global.URL.createObjectURL = createObjectURLSpy;
+  renderComponent();
+
+  const fileInput = screen.getByLabelText(/profile picture/i);
+  fireEvent.change(fileInput, { target: { files: [] } });
+
+  expect(createObjectURLSpy).not.toHaveBeenCalled();
+});
 });

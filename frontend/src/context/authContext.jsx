@@ -26,6 +26,13 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
+  const persistSession = (authToken, userData) => {
+  localStorage.setItem("token", authToken);
+  localStorage.setItem("user", JSON.stringify(userData));
+  setToken(authToken);
+  setUser(userData);
+};
+
   const fetchProfile = useCallback(async () => {
     if (!token) {
       setLoading(false);
@@ -49,64 +56,45 @@ export function AuthProvider({ children }) {
   }, [fetchProfile]);
 
  const login = async (email, password) => {
-    const response = await authService.login(email, password);
-    if (response?.success && response?.data?.token) {
-      const authToken = response.data.token;
-      
-      // Ensure profile_picture is explicitly captured and retained here:
-      const userData = response.data.user || {
-        id: response.data.id,
-        name: response.data.name,
-        email: response.data.email,
-        profile_picture: response.data.profile_picture || response.data.user?.profile_picture || null
-      };
+  const response = await authService.login(email, password);
+  if (response?.success && response?.data?.token) {
+    const userData = response.data.user || {
+      id: response.data.id,
+      name: response.data.name,
+      email: response.data.email,
+      profile_picture: response.data.profile_picture || null
+    };
+    persistSession(response.data.token, userData);
+  }
+  return response;
+};
 
-      localStorage.setItem("token", authToken);
-      localStorage.setItem("user", JSON.stringify(userData));
-      setToken(authToken);
-      setUser(userData);
-    }
-    return response;
-  };
-
-  const signup = async (name, email, password) => {
-    const response = await authService.register(name, email, password);
-    if (response?.success && response?.data?.token) {
-      const authToken = response.data.token;
-      const userData = response.data.user || {
-        id: response.data.id,
-        name: response.data.name,
-        email: response.data.email
-      };
-      localStorage.setItem("token", authToken);
-      localStorage.setItem("user", JSON.stringify(userData));
-      setToken(authToken);
-      setUser(userData);
-    }
-    return response;
-  };
-
-  const updateUserProfile = async (formData) => {
-    try {
-      const response = await authService.updateProfile(formData);
-      
-      if (response?.success && response?.data) {
-        const updatedUser = response.data.user || response.data;
-        
-        const mergedUser = {
-          ...user,
-          ...updatedUser,
-          profile_picture: updatedUser.profile_picture !== undefined ? updatedUser.profile_picture : user?.profile_picture
-        };
-
-        setUser(mergedUser);
-        localStorage.setItem("user", JSON.stringify(mergedUser));
-      }
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  };
+const signup = async (name, email, password) => {
+  const response = await authService.register(name, email, password);
+  if (response?.success && response?.data?.token) {
+    const userData = response.data.user || {
+      id: response.data.id,
+      name: response.data.name,
+      email: response.data.email
+    };
+    persistSession(response.data.token, userData);
+  }
+  return response;
+};
+const updateUserProfile = async (formData) => {
+  const response = await authService.updateProfile(formData);
+  if (response?.success && response?.data) {
+    const updatedUser = response.data.user || response.data;
+    const mergedUser = {
+      ...user,
+      ...updatedUser,
+      profile_picture: updatedUser.profile_picture !== undefined ? updatedUser.profile_picture : user?.profile_picture
+    };
+    setUser(mergedUser);
+    localStorage.setItem("user", JSON.stringify(mergedUser));
+  }
+  return response;
+};
 
   const value = {
     user,

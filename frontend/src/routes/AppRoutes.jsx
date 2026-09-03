@@ -1,11 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import MainLayout from "../layouts/MainLayout";
 import Login from "../pages/Login";
 import Signup from "../pages/Signup";
 import Dashboard from "../pages/Dashboard";
 import Profile from "../pages/Profile";
 import NotFound from "../pages/NotFound";
-import Loader from "../components/common/Loader";
 import { ProtectedRoute, PublicRoute } from "../components/ProtectedRoute"; // 👈 Import both here!
 
 function AppRoutes() {

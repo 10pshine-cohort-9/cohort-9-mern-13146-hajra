@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authContext";
+import { Link } from "react-router-dom";
+import { useAuthSubmit } from "../hooks/useAuthSubmit";
 import Input from "../components/common/Input";
 import PasswordField from "../components/common/PasswordField";
 import Button from "../components/common/Button";
@@ -10,42 +11,28 @@ import { FaStickyNote } from "react-icons/fa";
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { login } = useAuth();
-  const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
+const { error, setError, isSubmitting, submit } = useAuthSubmit({
+  getDefaultErrorMessage: () => "Failed to sign in.",
+  getCatchErrorMessage: (err) =>
+    err?.response?.data?.message || err?.message || "An error occurred during sign in.",
+});
 
-    if (!email.trim() || !password) {
-      setError("Please fill in all fields.");
-      return;
-    }
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
 
-    setIsSubmitting(true);
-    try {
-      const res = await login(email, password);
-      if (res.success) {
-        navigate("/dashboard");
-      } else {
-        setError(res.message || "Failed to sign in.");
-      }
-    } 
-     catch (err) {
-    setError(
-      err.response?.data?.message || 
-      err.message || 
-      "An error occurred during sign in."
-    );
-  
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  if (!email.trim() || !password) {
+    setError("Please fill in all fields.");
+    return;
+  }
 
+  await submit(() => login(email, password));
+};
+
+ 
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-12 bg-[#F5F6FA]">
       
@@ -75,7 +62,7 @@ function Login() {
       </div>
 
       <div className="lg:col-span-9 flex items-center justify-center p-12 sm:p-20">
-        <div className="w-full max-w-3xl bg-purple-300/10 backdrop-blur-3xl rounded-3xl shadow-[0_8px_32px_0_rgba(124,119,198,0.25)] border-purple-200/50) border border-purple-300 p-12 sm:p-16">
+        <div className="w-full max-w-3xl bg-purple-300/10 backdrop-blur-3xl rounded-3xl shadow-[0_8px_32px_0_rgba(124,119,198,0.25)] border-purple-200/50 border border-purple-300 p-12 sm:p-16">
           
           <div className="mb-10 text-center lg:text-left">
             <h2 className="text-4xl sm:text-5xl font-extrabold text-[#3F3A85]">Sign In to Your Account</h2>

@@ -61,87 +61,122 @@ describe('Navbar Component Branch Coverage', () => {
     expect(mockedNavigate).toHaveBeenCalledWith('/profile');
   });
 
-  test('falls back to localhost origin when VITE_API_URL is malformed', () => {
-  process.env.VITE_API_URL = 'not a valid url';
+  test('falls back to default origin when the API URL cannot be parsed', () => {
+    const OriginalURL = global.URL;
+    global.URL = jest.fn(() => {
+      throw new Error('Invalid URL');
+    });
 
-  useAuth.mockReturnValue({ user: { name: 'Hajra', profile_picture: '/pic.jpg' } });
+    useAuth.mockReturnValue({
+      user: { name: 'Dev', profile_picture: '/images/avatar.jpg' },
+    });
 
-  render(
-    <BrowserRouter>
-      <Navbar />
-    </BrowserRouter>
-  );
+    render(
+      <BrowserRouter>
+        <Navbar />
+      </BrowserRouter>
+    );
 
-  const images = screen.getAllByAltText('Profile');
-  expect(images[0].getAttribute('src')).toBe('http://localhost:5000/pic.jpg');
+    expect(screen.getAllByAltText('Profile')[0]).toHaveAttribute(
+      'src',
+      'http://localhost:5000/images/avatar.jpg'
+    );
 
-  delete process.env.VITE_API_URL;
-});
+    global.URL = OriginalURL;
+  });
 
-test('activates profile navigation via keyboard (Enter and Space)', () => {
-  useAuth.mockReturnValue({ user: { name: 'Hajra' } });
+  test('uses VITE_API_URL when it is explicitly set', () => {
+    process.env.VITE_API_URL = 'https://api.production.com';
 
-  render(
-    <BrowserRouter>
-      <Navbar />
-    </BrowserRouter>
-  );
+    useAuth.mockReturnValue({
+      user: { name: 'Dev', profile_picture: '/images/avatar.jpg' },
+    });
 
-  const profileSections = screen.getAllByTitle('Go to Profile');
-  fireEvent.keyDown(profileSections[0], { key: 'Enter' });
-  expect(mockedNavigate).toHaveBeenCalledWith('/profile');
+    render(
+      <BrowserRouter>
+        <Navbar />
+      </BrowserRouter>
+    );
 
-  mockedNavigate.mockClear();
-  fireEvent.keyDown(profileSections[0], { key: ' ' });
-  expect(mockedNavigate).toHaveBeenCalledWith('/profile');
+    expect(screen.getAllByAltText('Profile')[0]).toHaveAttribute(
+      'src',
+      'https://api.production.com/images/avatar.jpg'
+    );
 
-  mockedNavigate.mockClear();
-  fireEvent.keyDown(profileSections[0], { key: 'Escape' });
-  expect(mockedNavigate).not.toHaveBeenCalled();
-});
+    delete process.env.VITE_API_URL;
+  });
 
-test('clicking mobile profile section also navigates', () => {
-  useAuth.mockReturnValue({ user: { name: 'Hajra' } });
+  test('clicking profile section in both viewports navigates to profile page', () => {
+    useAuth.mockReturnValue({
+      user: { name: 'Hajra', profile_picture: 'https://example.com/avatar.jpg' },
+    });
 
-  render(
-    <BrowserRouter>
-      <Navbar />
-    </BrowserRouter>
-  );
+    render(
+      <BrowserRouter>
+        <Navbar />
+      </BrowserRouter>
+    );
 
-  const profileSections = screen.getAllByTitle('Go to Profile');
-  fireEvent.click(profileSections[1]);
-  expect(mockedNavigate).toHaveBeenCalledWith('/profile');
-});
+    const profileElements = screen.getAllByTitle('Go to Profile');
 
-test('typing in desktop and mobile search inputs calls onSearchChange', () => {
-  const mockOnSearchChange = jest.fn();
-  useAuth.mockReturnValue({ user: { name: 'Hajra' } });
+    profileElements.forEach((element) => {
+      fireEvent.click(element);
+    });
 
-  render(
-    <BrowserRouter>
-      <Navbar searchQuery="" onSearchChange={mockOnSearchChange} onToggleSidebar={jest.fn()} />
-    </BrowserRouter>
-  );
+    expect(mockedNavigate).toHaveBeenCalledWith('/profile');
+    expect(mockedNavigate).toHaveBeenCalledTimes(profileElements.length);
+  });
 
-  fireEvent.change(screen.getByPlaceholderText('Search notes here...'), { target: { value: 'todo' } });
-  expect(mockOnSearchChange).toHaveBeenCalledWith('todo');
+  test('activates profile navigation via keyboard (Enter and Space)', () => {
+    useAuth.mockReturnValue({ user: { name: 'Hajra' } });
 
-  fireEvent.change(screen.getByPlaceholderText('Search notes...'), { target: { value: 'grocery' } });
-  expect(mockOnSearchChange).toHaveBeenCalledWith('grocery');
-});
+    render(
+      <BrowserRouter>
+        <Navbar />
+      </BrowserRouter>
+    );
 
-test('clicking hamburger menu toggles sidebar', () => {
-  const mockOnToggleSidebar = jest.fn();
-  useAuth.mockReturnValue({ user: { name: 'Hajra' } });
+    const profileSections = screen.getAllByTitle('Go to Profile');
+    fireEvent.keyDown(profileSections[0], { key: 'Enter' });
+    expect(mockedNavigate).toHaveBeenCalledWith('/profile');
 
-  render(
-    <BrowserRouter>
-      <Navbar onToggleSidebar={mockOnToggleSidebar} searchQuery="" onSearchChange={jest.fn()} />
-    </BrowserRouter>
-  );
+    mockedNavigate.mockClear();
+    fireEvent.keyDown(profileSections[0], { key: ' ' });
+    expect(mockedNavigate).toHaveBeenCalledWith('/profile');
 
-  fireEvent.click(screen.getByLabelText('Toggle Sidebar'));
-  expect(mockOnToggleSidebar).toHaveBeenCalled();
-});
+    mockedNavigate.mockClear();
+    fireEvent.keyDown(profileSections[0], { key: 'Escape' });
+    expect(mockedNavigate).not.toHaveBeenCalled();
+  });
+
+  test('typing in desktop and mobile search inputs calls onSearchChange', () => {
+    const mockOnSearchChange = jest.fn();
+    useAuth.mockReturnValue({ user: { name: 'Hajra' } });
+
+    render(
+      <BrowserRouter>
+        <Navbar onToggleSidebar={jest.fn()} searchQuery="" onSearchChange={mockOnSearchChange} />
+      </BrowserRouter>
+    );
+
+    fireEvent.change(screen.getByPlaceholderText('Search notes here...'), { target: { value: 'todo' } });
+    expect(mockOnSearchChange).toHaveBeenCalledWith('todo');
+
+    fireEvent.change(screen.getByPlaceholderText('Search notes...'), { target: { value: 'grocery' } });
+    expect(mockOnSearchChange).toHaveBeenCalledWith('grocery');
+  });
+
+  test('clicking hamburger menu toggles sidebar', () => {
+    const mockOnToggleSidebar = jest.fn();
+    useAuth.mockReturnValue({ user: { name: 'Hajra' } });
+
+    render(
+      <BrowserRouter>
+        <Navbar onToggleSidebar={mockOnToggleSidebar} searchQuery="" onSearchChange={jest.fn()} />
+      </BrowserRouter>
+    );
+
+    fireEvent.click(screen.getByLabelText('Toggle Sidebar'));
+    expect(mockOnToggleSidebar).toHaveBeenCalled();
+  });
 });

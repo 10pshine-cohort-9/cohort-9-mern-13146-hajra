@@ -22,7 +22,6 @@ Object.defineProperty(globalThis, 'import', {
   },
 });
 
-
 // jsdom (bundled with jest-environment-jsdom) does not implement
 // Blob.prototype.text() / File.prototype.text(), so polyfill it using
 // FileReader, which jsdom does support.
