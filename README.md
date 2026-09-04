@@ -70,6 +70,7 @@ This project was built iteratively with a strong emphasis on test coverage, code
 
 ## Tech Stack
 
+
 | Layer | Technology |
 |---|---|
 | Frontend | React.js (Vite), React Router, Axios |
@@ -83,13 +84,17 @@ This project was built iteratively with a strong emphasis on test coverage, code
 | Code Quality | SonarQube, ESLint, CodeRabbit |
 | Version Control | Git |
 
+
 ---
 
 ## Project Structure
 ```
 ├── .coderabbit.yaml
-├── README.md
+├── .gitignore
 ├── database.sql
+├── README.md
+├── sonar-project.properties
+├── SonarQube Report.pdf
 │
 ├── backend/
 │   ├── .env.example
@@ -145,6 +150,7 @@ This project was built iteratively with a strong emphasis on test coverage, code
 │
 └── frontend/
     ├── README.md
+    ├── .gitignore
     ├── index.html
     ├── vite.config.js
     ├── jest.config.cjs
@@ -154,39 +160,70 @@ This project was built iteratively with a strong emphasis on test coverage, code
     └── src/
         ├── App.jsx
         ├── main.jsx
+        ├── index.css
+        ├── setupTests.js
         ├── components/
         │   ├── NoteModal.jsx
         │   ├── ProtectedRoute.jsx
+        │   ├── __tests__/
+        │   │   └── NoteModal.test.jsx
         │   └── common/
         │       ├── Button.jsx
         │       ├── Input.jsx
         │       ├── Loader.jsx
-        │       └── PasswordField.jsx
+        │       ├── PasswordField.jsx
+        │       ├── ProfileSection.jsx
+        │       └── __tests__/
+        │           ├── Button.test.jsx
+        │           ├── Input.test.jsx
+        │           └── PasswordField.test.jsx
         ├── context/
-        │   └── authContext.jsx
+        │   ├── authContext.jsx
+        │   └── __tests__/
+        │       └── AuthContext.test.jsx
         ├── hooks/
         │   └── useAuthSubmit.js
         ├── layouts/
         │   ├── MainLayout.jsx
         │   ├── Navbar.jsx
-        │   └── Sidebar.jsx
+        │   ├── Sidebar.jsx
+        │   └── __tests__/
+        │       ├── MainLayout.test.jsx
+        │       ├── Navbar.test.jsx
+        │       └── Sidebar.test.jsx
         ├── pages/
         │   ├── Dashboard.jsx
         │   ├── Login.jsx
         │   ├── Signup.jsx
         │   ├── Profile.jsx
-        │   └── NotFound.jsx
+        │   ├── NotFound.jsx
+        │   └── __tests__/
+        │       ├── Dashboard.branches.test.jsx
+        │       ├── Dashboard.test.jsx
+        │       ├── DashboardInteractions.test.jsx
+        │       ├── Login.test.jsx
+        │       ├── NotFound.test.jsx
+        │       ├── Profile.test.jsx
+        │       └── SignUp.test.jsx
         ├── routes/
-        │   └── AppRoutes.jsx
+        │   ├── AppRoutes.jsx
+        │   └── __tests__/
+        │       └── ProtectedRoute.test.jsx
         ├── services/
         │   ├── api.js
         │   ├── authService.js
-        │   └── noteService.js
+        │   ├── noteService.js
+        │   └── __tests__/
+        │       ├── api.test.js
+        │       ├── authService.test.js
+        │       └── noteService.test.js
         ├── utils/
-        │   └── constants.js
-        ├── tests/
-        │   └── styleMock.js
-        └── setupTests.js
+        │   ├── constants.js
+        │   └── __tests__/
+        │       └── constants.test.js
+        └── tests/
+            ├── App.test.jsx
+            └── styleMock.js
 ```
 
 ---
