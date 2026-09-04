@@ -5,8 +5,7 @@ const userModel = require("../models/userModel");
 const getJwtSecret = require("../utils/jwtSecret");
 const pool = require("../config/db");
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
 async function register(req, res, next) {
     try {
         const body = req.body || {};

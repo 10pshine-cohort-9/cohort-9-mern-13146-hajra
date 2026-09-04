@@ -8,6 +8,39 @@ function parseBooleanFlag(val) {
     return null;
 }
 
+
+function validateAndUpdateTitle(title, existingTitle) {
+    if (title === undefined) {
+        return existingTitle;
+    }
+    if (typeof title !== "string" || !title.trim()) {
+        throw new Error("Title cannot be empty");
+    }
+    return title.trim();
+}
+
+function validateAndUpdateContent(content, existingContent) {
+    if (content === undefined) {
+        return existingContent;
+    }
+    if (typeof content !== "string") {
+    throw new TypeError("Content must be a string");
+}
+    return content.trim();
+}
+
+function validateAndNormalizeFlag(value, fieldName) {
+    if (value === undefined) {
+        return undefined;
+    }
+    const normalized = parseBooleanFlag(value);
+    if (normalized === null) {
+        throw new Error(`${fieldName} must be a boolean or 0/1`);
+    }
+    return normalized;
+}
+
+
 async function createNote(req, res, next) {
     try {
         const { title, content } = req.body || {};
@@ -16,7 +49,6 @@ async function createNote(req, res, next) {
         const safeContent = (typeof content === "string") ? content.trim() : "";
         const isContentEmpty = !safeContent || safeContent === "<p><br></p>" || safeContent === "<p></p>";
 
-        // If both are missing/empty, reject it immediately with 400
         if (!safeTitle && isContentEmpty) {
             return res.status(400).json({
                 success: false,
@@ -97,48 +129,19 @@ async function updateNote(req, res, next) {
 
         const { title, content, is_pinned, is_archived } = req.body || {};
 
-        let updatedTitle = existingNote.title;
-        if (title !== undefined) {
-            if (typeof title !== "string" || !title.trim()) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Title cannot be empty"
-                });
-            }
-            updatedTitle = title.trim();
-        }
-
-        let updatedContent = existingNote.content;
-        if (content !== undefined) {
-            if (typeof content !== "string") {
-                return res.status(400).json({
-                    success: false,
-                    message: "Content must be a string"
-                });
-            }
-            updatedContent = content.trim();
-        }
-
-        let normalizedPinned = undefined;
-        if (is_pinned !== undefined) {
-            normalizedPinned = parseBooleanFlag(is_pinned);
-            if (normalizedPinned === null) {
-                return res.status(400).json({
-                    success: false,
-                    message: "is_pinned must be a boolean or 0/1"
-                });
-            }
-        }
-
-        let normalizedArchived = undefined;
-        if (is_archived !== undefined) {
-            normalizedArchived = parseBooleanFlag(is_archived);
-            if (normalizedArchived === null) {
-                return res.status(400).json({
-                    success: false,
-                    message: "is_archived must be a boolean or 0/1"
-                });
-            }
+        // Use helper functions for validation
+        let updatedTitle, updatedContent, normalizedPinned, normalizedArchived;
+        
+        try {
+            updatedTitle = validateAndUpdateTitle(title, existingNote.title);
+            updatedContent = validateAndUpdateContent(content, existingNote.content);
+            normalizedPinned = validateAndNormalizeFlag(is_pinned, "is_pinned");
+            normalizedArchived = validateAndNormalizeFlag(is_archived, "is_archived");
+        } catch (error) {
+            return res.status(400).json({
+                success: false,
+                message: error.message
+            });
         }
 
         const updateData = {

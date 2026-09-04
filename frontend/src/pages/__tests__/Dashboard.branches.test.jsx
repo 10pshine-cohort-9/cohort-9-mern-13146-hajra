@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within , act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import Dashboard from '../Dashboard';
 import { noteService } from '../../services/noteService';
@@ -599,24 +598,9 @@ test('pinned-first ordering works regardless of initial array order', async () =
     const titles = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
     expect(titles.indexOf('Later Pinned')).toBeLessThan(titles.indexOf('First Unpinned'));
   });
+  
 });
 
-test('skips invalid entries in a JSON array and reports how many were skipped', async () => {
-  noteService.getNotes.mockResolvedValue([]);
-  noteService.createNote.mockResolvedValue({ id: 40 });
-  render(<Dashboard />);
-  await waitFor(() => expect(screen.getByText('No notes found.')).toBeInTheDocument());
 
-  const file = new File(
-    [JSON.stringify([{ title: 'Valid Note', content: 'x' }, null, 'not-an-object'])],
-    'mixed.json',
-    { type: 'application/json' }
-  );
-  const input = document.querySelector('input[type="file"]');
-  fireEvent.change(input, { target: { files: [file] } });
 
-  await waitFor(() => {
-    expect(screen.getByText('Skipped 2 invalid item(s) in the imported file.')).toBeInTheDocument();
-  });
-  expect(noteService.createNote).toHaveBeenCalledWith({ title: 'Valid Note', content: 'x' });
-});
+

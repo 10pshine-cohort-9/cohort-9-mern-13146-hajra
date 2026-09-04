@@ -5,8 +5,8 @@ function authenticateToken(req, res, next) {
     try {
         const authHeader = req.headers.authorization;
 
-        if (!authHeader || !authHeader.startsWith("Bearer ")) {
-            return res.status(401).json({
+    if (!authHeader?.startsWith("Bearer ")) {
+                return res.status(401).json({
                 success: false,
                 message: "Authentication token is required"
             });

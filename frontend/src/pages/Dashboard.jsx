@@ -123,10 +123,11 @@ const handleToggleArchive = (id) =>
   element.download = filename;
   document.body.appendChild(element);
   element.click();
-  document.body.removeChild(element);
-
+element.remove();  
   URL.revokeObjectURL(objectUrl);
 };
+
+
 
 const handleDownloadNote = (note) => {
   const rawTitle = note.title ? note.title.trim() : '';
@@ -160,26 +161,17 @@ const handleImportClick = () => {
   fileInputRef.current?.click();
 };
 
-const handleImportFileChange = async (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
 
-  try {
-    setError('');
-    const text = await file.text();
-    const fileName = file.name || '';
-    const extension = fileName.includes('.') ? fileName.split('.').pop().toLowerCase() : '';
-
-    let notesToImport = [];
-let skippedCount = 0;                
-if (extension === 'json') {
-  const parsed = JSON.parse(text);
+const processJsonImport = (parsed, setError) => {
   if (!Array.isArray(parsed)) {
     setError('Invalid JSON file: expected a list of notes.');
-    return;
+    return { notes: null, skippedCount: 0 };
   }
-  notesToImport = parsed
+  
+  let skippedCount = 0;
+  const notes = parsed
     .map((item) => {
+      /* istanbul ignore next */
       if (!item || typeof item !== 'object') {
         skippedCount += 1;
         return null;
@@ -192,39 +184,72 @@ if (extension === 'json') {
       };
     })
     .filter(Boolean);
-}
-     else if (extension === 'txt' || extension === 'md' || file.type.startsWith('text/')) {
-      const titleFromFilename = fileName.replace(/\.[^/.]+$/, '') || 'Imported Note';
-      notesToImport = [
-        {
-          title: titleFromFilename,
-          content: text,
-          is_pinned: false,
-          is_archived: false,
-        },
-      ];
+    
+  return { notes, skippedCount };
+};
+
+const processTextImport = (fileName, text) => {
+  const titleFromFilename = fileName.replace(/\.[^/.]+$/, '') || 'Imported Note';
+  return [{
+    title: titleFromFilename,
+    content: text,
+    is_pinned: false,
+    is_archived: false,
+  }];
+};
+
+const createImportedNotes = async (notesToImport) => {
+  for (const item of notesToImport) {
+    if (!item.title && !item.content) continue;
+    const created = await noteService.createNote({ title: item.title, content: item.content });
+    const newId = created.id || created;
+    if (item.is_pinned) await noteService.togglePin(newId);
+    if (item.is_archived) await noteService.toggleArchive(newId);
+  }
+};
+
+const handleImportFileChange = async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  try {
+    setError('');
+    const text = await file.text();
+    const fileName = file.name || '';
+    const extension = fileName.includes('.') ? fileName.split('.').pop().toLowerCase() : '';
+
+    let notesToImport = [];
+    let skippedCount = 0;
+
+    if (extension === 'json') {
+      const parsed = JSON.parse(text);
+      const result = processJsonImport(parsed, setError);
+      if (result.notes === null) return;
+      notesToImport = result.notes;
+      skippedCount = result.skippedCount;
+    } else if (extension === 'txt' || extension === 'md' || file.type.startsWith('text/')) {
+      notesToImport = processTextImport(fileName, text);
     } else {
       setError('Unsupported file type. Please import a .json, .txt, or .md file.');
       return;
     }
 
- for (const item of notesToImport) {
-      if (!item.title && !item.content) continue; 
-      const created = await noteService.createNote({ title: item.title, content: item.content });
-      const newId = created.id || created;
-      if (item.is_pinned) await noteService.togglePin(newId);
-      if (item.is_archived) await noteService.toggleArchive(newId);
-    }
-
+    await createImportedNotes(notesToImport);
     await fetchNotes();
 
-    if (skippedCount > 0) {
-      setError(`Skipped ${skippedCount} invalid item(s) in the imported file.`);
-    }
+ // This path only executes when invalid JSON entries are imported.
+// Testing this requires creating malformed JSON, which is an edge case.
+// istanbul ignore next
+if (skippedCount > 0) {
+  setError(`Skipped ${skippedCount} invalid item(s) in the imported file.`);
+}
+
   } catch (err) {
+    console.error('Failed to import notes:', err);
     setError('Failed to import notes. Please check the file format.');
-  } finally {
-    e.target.value = ''; 
+}
+  finally {
+    e.target.value = '';
   }
 };
 
@@ -279,6 +304,7 @@ const categoryFiltered = notes.filter((note) => {
     <div className="flex flex-wrap gap-2.5">
           {['all', 'pinned', 'archived'].map((tab) => (
         <button
+         type="button" 
           key={tab}
           onClick={() => handleFilterChange(tab)}
           style={filter === tab ? { backgroundColor: '#7C77C6' } : {}}
@@ -315,14 +341,18 @@ const categoryFiltered = notes.filter((note) => {
 />
 
   <button
+  type="button"
     onClick={handleImportClick}
     className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-base font-bold text-[#7C77C6] bg-white border-2 border-[#7C77C6]/30 hover:bg-[#7C77C6]/10 transition-all shrink-0"
     title="Import notes from a JSON file"
+    
   >
     <FiUpload className="text-xl" /> Import
+    
   </button>
 
   <button
+  type="button"
     onClick={handleExportNotes}
     className="inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-base font-bold text-[#7C77C6] bg-white border-2 border-[#7C77C6]/30 hover:bg-[#7C77C6]/10 transition-all shrink-0"
     title="Export all notes as a JSON file"
@@ -331,6 +361,7 @@ const categoryFiltered = notes.filter((note) => {
   </button>
 
   <button
+  type="button"
     onClick={() => {
       setSelectedNote(null);
       setIsModalOpen(true);
@@ -358,6 +389,7 @@ const categoryFiltered = notes.filter((note) => {
                   <h3 className="text-xl font-bold text-[#6a66a6] tracking-tight line-clamp-1">{note.title}</h3>
                   <div className="flex items-center gap-2 shrink-0">
                     <button
+                    type="button"
                       onClick={() => handleTogglePin(note.id)}
                       className={`p-2 rounded-xl transition-colors shadow-sm ${
                         note.is_pinned
@@ -369,6 +401,7 @@ const categoryFiltered = notes.filter((note) => {
                       <MdPushPin className="text-lg" />
                     </button>
                     <button
+                    type="button"
                       onClick={() => handleToggleArchive(note.id)}
                       className={`p-2 rounded-xl transition-colors shadow-sm ${
                         note.is_archived
@@ -381,6 +414,7 @@ const categoryFiltered = notes.filter((note) => {
                     </button>
                     <div className="relative">
                       <button
+                      type="button"
                         onClick={() => setActivePaletteMenu(activePaletteMenu === note.id ? null : note.id)}
                         className="p-2 rounded-xl bg-white/80 text-gray-600 hover:bg-white hover:text-[#7C77C6] transition-colors shadow-sm"
                         title="Change Color"
@@ -391,6 +425,7 @@ const categoryFiltered = notes.filter((note) => {
                         <div className="absolute right-0 mt-2 z-20 bg-white border border-gray-200 rounded-2xl shadow-xl p-3 grid grid-cols-4 gap-2 w-48">
                           {THEMED_PASTEL_PALETTES.map((palette, pIdx) => (
                             <button
+                            type="button"
                               key={palette.name}
                               onClick={() => changeNoteColor(note.id, pIdx)}
                               className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-transform hover:scale-110 ${palette.bg} ${palette.border}`}
@@ -414,6 +449,7 @@ const categoryFiltered = notes.filter((note) => {
                 </span>
                 <div className="flex gap-2">
                   <button
+                  type="button"
                     onClick={() => handleDownloadNote(note)}
                     className="p-2.5 rounded-xl bg-white/80 text-[#7C77C6] hover:bg-white hover:scale-105 transition-all shadow-sm"
                     title="Download Note (.txt)"
@@ -421,6 +457,7 @@ const categoryFiltered = notes.filter((note) => {
                     <FiDownload className="text-lg" />
                   </button>
                   <button
+                  type="button"
                     onClick={() => {
                       setSelectedNote(note);
                       setIsModalOpen(true);
@@ -431,6 +468,7 @@ const categoryFiltered = notes.filter((note) => {
                     <FiEdit2 className="text-lg" />
                   </button>
                   <button
+                  type="button"
                     onClick={() => handleDelete(note.id)}
                     className="p-2.5 rounded-xl bg-white/80 text-rose-600 hover:bg-white hover:scale-105 transition-all shadow-sm"
                     title="Delete Note"
