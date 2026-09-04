@@ -537,6 +537,40 @@ test('skips import of a JSON item with neither title nor content', async () => {
   expect(noteService.createNote).not.toHaveBeenCalled();
 });
 
+test('skips import of a JSON item with a whitespace-only title and non-string content', async () => {
+  noteService.getNotes.mockResolvedValue([]);
+  render(<Dashboard />);
+  await waitFor(() => expect(screen.getByText('No notes found.')).toBeInTheDocument());
+
+  const file = new File(
+    [JSON.stringify([{ title: '   ', content: 12345, is_pinned: false, is_archived: false }])],
+    'whitespace.json',
+    { type: 'application/json' }
+  );
+  const input = document.querySelector('input[type="file"]');
+  fireEvent.change(input, { target: { files: [file] } });
+
+  await waitFor(() => expect(screen.getByText('No notes found.')).toBeInTheDocument());
+  expect(noteService.createNote).not.toHaveBeenCalled();
+});
+
+test('skips import of a JSON item where title is not a string at all', async () => {
+  noteService.getNotes.mockResolvedValue([]);
+  render(<Dashboard />);
+  await waitFor(() => expect(screen.getByText('No notes found.')).toBeInTheDocument());
+
+  const file = new File(
+    [JSON.stringify([{ title: 12345, content: '   ', is_pinned: false, is_archived: false }])],
+    'nonstring-title.json',
+    { type: 'application/json' }
+  );
+  const input = document.querySelector('input[type="file"]');
+  fireEvent.change(input, { target: { files: [file] } });
+
+  await waitFor(() => expect(screen.getByText('No notes found.')).toBeInTheDocument());
+  expect(noteService.createNote).not.toHaveBeenCalled();
+});
+
 test('imports a .md file as a single note', async () => {
   noteService.getNotes.mockResolvedValue([]);
   noteService.createNote.mockResolvedValue({ id: 22 });

@@ -199,13 +199,22 @@ const processTextImport = (fileName, text) => {
 };
 
 const createImportedNotes = async (notesToImport) => {
+  let localSkipped = 0;
   for (const item of notesToImport) {
-    if (!item.title && !item.content) continue;
-    const created = await noteService.createNote({ title: item.title, content: item.content });
+    const normalizedTitle = typeof item.title === 'string' ? item.title.trim() : '';
+    const normalizedContent = typeof item.content === 'string' ? item.content.trim() : '';
+
+    if (!normalizedTitle && !normalizedContent) {
+      localSkipped += 1;
+      continue;
+    }
+
+    const created = await noteService.createNote({ title: normalizedTitle, content: normalizedContent });
     const newId = created.id || created;
     if (item.is_pinned) await noteService.togglePin(newId);
     if (item.is_archived) await noteService.toggleArchive(newId);
   }
+  return localSkipped;
 };
 
 const handleImportFileChange = async (e) => {
@@ -234,7 +243,8 @@ const handleImportFileChange = async (e) => {
       return;
     }
 
-    await createImportedNotes(notesToImport);
+        const additionalSkipped = await createImportedNotes(notesToImport);
+    skippedCount += additionalSkipped;
     await fetchNotes();
 
  // This path only executes when invalid JSON entries are imported.

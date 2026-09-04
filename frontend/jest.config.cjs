@@ -4,7 +4,16 @@ module.exports = {
     '^.+\\.(js|jsx)$': 'babel-jest',
   },
   setupFilesAfterEnv: ['<rootDir>/src/setupTests.js'],
-moduleNameMapper: {
+  moduleNameMapper: {
     '^.+\\.(css|less|scss|sass)$': '<rootDir>/src/tests/styleMock.js',
   },
+  collectCoverageFrom: [
+    'src/**/*.{js,jsx}',
+    '!src/**/__tests__/**',
+    '!src/setupTests.js',
+    '!src/tests/**',
+    '!src/main.jsx',
+  ],
+  coverageDirectory: 'coverage',
+  coverageReporters: ['lcov', 'text'],
 };

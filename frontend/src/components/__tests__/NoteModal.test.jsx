@@ -10,6 +10,8 @@ const mockGetEditor = {
   },
 };
 
+const mockEditingArea = document.createElement('div');
+
 jest.mock('react-quill-new', () => {
   const ReactMock = require('react');
   return {
@@ -17,6 +19,7 @@ jest.mock('react-quill-new', () => {
     default: ReactMock.forwardRef(({ defaultValue, onChange, placeholder }, ref) => {
       ReactMock.useImperativeHandle(ref, () => ({
         getEditor: () => mockGetEditor,
+        getEditingArea: () => mockEditingArea,
       }));
 
       return (
@@ -48,6 +51,11 @@ describe('NoteModal Component Comprehensive Tests', () => {
   test('does not render when isOpen is false', () => {
     const { container } = render(<NoteModal {...defaultProps} isOpen={false} />);
     expect(container.firstChild).toBeNull();
+  });
+
+  test('sets aria-labelledby on the editing area once the editor mounts', () => {
+    render(<NoteModal {...defaultProps} />);
+    expect(mockEditingArea.getAttribute('aria-labelledby')).toBe('note-content-label');
   });
 
   test('renders correctly with initialData using content, body, or description properties and handles colors/pins/archives', () => {
@@ -236,7 +244,8 @@ test('unchecking Archive does not touch pinned state', async () => {
   const archiveCheckbox = screen.getByLabelText(/archive note/i);
   expect(archiveCheckbox).toBeChecked();
 
-  fireEvent.click(archiveCheckbox); // unchecking
+  fireEvent.click(archiveCheckbox); 
   expect(archiveCheckbox).not.toBeChecked();
   expect(screen.getByLabelText(/pin note/i)).not.toBeChecked();
 });
+  

@@ -28,7 +28,7 @@ const getApiOrigin = () => {
 
 export const getProfilePicUrl = (user) => {
   if (!user?.profile_picture) return null;
-  if (user.profile_picture.startsWith("http")) return user.profile_picture;
+  if (/^https?:\/\//i.test(user.profile_picture)) return user.profile_picture;
   return `${getApiOrigin()}${user.profile_picture}`;
 };
 

@@ -322,7 +322,7 @@ npm test
 
 Run with coverage:
 ```bash
-npx nyc mocha test/**/*.test.js --exit
+npm run test:coverage
 ```
 
 The backend test suite includes:

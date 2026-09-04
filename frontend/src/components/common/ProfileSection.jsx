@@ -74,9 +74,6 @@ ProfileSection.propTypes = {
   variant: PropTypes.oneOf(['navbar', 'sidebar']),
 };
 
-ProfileSection.defaultProps = {
-  isCollapsed: false,
-  variant: 'navbar',
-};
+
 
 export default ProfileSection;

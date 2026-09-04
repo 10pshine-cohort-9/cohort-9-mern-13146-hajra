@@ -17,6 +17,13 @@ export function NoteModal({ isOpen, onClose, onSave, initialData }) {
   const quillRef = useRef(null);
 
   useEffect(() => {
+  const editingArea = quillRef.current?.getEditingArea?.();
+  if (editingArea) {
+    editingArea.setAttribute('aria-labelledby', 'note-content-label');
+  }
+}, [editorKey]);
+
+  useEffect(() => {
     if (!isOpen) {
       setEditorKey(null);
       return;
@@ -120,7 +127,7 @@ const handleSubmit = async (e) => {
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label  htmlFor="note-content" className="block font-semibold text-[#6c67ac] text-xl">Content</label>
+              <label id="note-content-label" className="block font-semibold text-[#6c67ac] text-xl">Content</label>
              <div className="flex gap-1">
                 <div className="relative group">
                   <button
@@ -153,16 +160,15 @@ const handleSubmit = async (e) => {
 
             <div className="bg-white rounded-xl border border-purple-300 note-editor">
               {editorKey !== null && (
-                <ReactQuill
-                  id="note-content"  
-                  key={editorKey}
-                  ref={quillRef}
-                  theme="snow"
-                  defaultValue={content}
-                  onChange={setContent}
-                  modules={modules}
-                  placeholder="Write your note here..."
-                />
+               <ReactQuill
+  key={editorKey}
+  ref={quillRef}
+  theme="snow"
+  defaultValue={content}
+  onChange={setContent}
+  modules={modules}
+  placeholder="Write your note here..."
+/>
               )}
             </div>
           </div>
