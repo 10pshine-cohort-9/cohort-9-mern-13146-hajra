@@ -127,7 +127,7 @@ const handleSubmit = async (e) => {
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label id="note-content-label" className="block font-semibold text-[#6c67ac] text-xl">Content</label>
+              <span id="note-content-label" className="block font-semibold text-[#6c67ac] text-xl">Content</span>
              <div className="flex gap-1">
                 <div className="relative group">
                   <button
