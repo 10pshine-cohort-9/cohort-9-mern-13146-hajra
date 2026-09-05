@@ -1,5 +1,5 @@
 const express = require("express");
-const path = require("path");
+const path = require("node:path");
 const cors = require("cors");
 const pinoHttp = require("pino-http");
 const logger = require("./src/logger/logger");
@@ -9,6 +9,8 @@ const userRoutes = require("./src/routes/userRoutes");
 const errorMiddleware = require("./src/middleware/errorMiddleware");
 
 const app = express();
+
+app.disable("x-powered-by");
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",").map((origin) => origin.trim()).filter(Boolean)

@@ -212,6 +212,35 @@ describe('Sidebar Component Branch Coverage', () => {
     expect(mockOnClose).toHaveBeenCalledTimes(2);
   });
 
+
+  test('activates backdrop close when clicked, since it is now a native button element', () => {
+    const mockOnClose = jest.fn();
+    useAuth.mockReturnValue({
+      user: { name: 'Hajra', email: 'hajra@test.com' },
+      logout: mockLogout,
+    });
+
+    const { container } = render(
+      <BrowserRouter>
+        <Sidebar
+          isOpen={true}
+          onClose={mockOnClose}
+          isCollapsed={false}
+          onToggleCollapse={jest.fn()}
+          filter="all"
+          onFilterChange={jest.fn()}
+        />
+      </BrowserRouter>
+    );
+
+    const backdrop = container.querySelector('.backdrop-blur-xs');
+
+    expect(backdrop.tagName).toBe('BUTTON');
+
+    fireEvent.click(backdrop);
+    expect(mockOnClose).toHaveBeenCalledTimes(1);
+  });
+
   test('does not render backdrop when sidebar is closed', () => {
     useAuth.mockReturnValue({
       user: { name: 'Hajra', email: 'hajra@test.com' },

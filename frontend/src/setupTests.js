@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { TextEncoder, TextDecoder } from 'util';
+import { TextEncoder, TextDecoder } from 'node:util';
 
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
@@ -25,7 +25,9 @@ Object.defineProperty(globalThis, 'import', {
 // jsdom (bundled with jest-environment-jsdom) does not implement
 // Blob.prototype.text() / File.prototype.text(), so polyfill it using
 // FileReader, which jsdom does support.
+// istanbul ignore next - Polyfill for jsdom environment
 if (typeof File.prototype.text !== 'function') {
+  // Using FileReader because jsdom doesn't support Blob.text() natively
   File.prototype.text = function () {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -36,6 +38,7 @@ if (typeof File.prototype.text !== 'function') {
   };
 }
 
+// istanbul ignore next - Polyfill for jsdom environment
 if (typeof Blob.prototype.text !== 'function') {
   Blob.prototype.text = File.prototype.text;
 }

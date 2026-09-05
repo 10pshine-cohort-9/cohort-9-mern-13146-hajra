@@ -1,7 +1,7 @@
 async function withFallback(obj, primaryName, fallbackName, fallbackImpl, testFn) {
     const originalPrimary = obj[primaryName];
-    const hadFallback = Object.prototype.hasOwnProperty.call(obj, fallbackName);
-    const originalFallback = obj[fallbackName];
+const hadFallback = Object.hasOwn(obj, fallbackName);
+const originalFallback = obj[fallbackName];
 
     delete obj[primaryName];
     obj[fallbackName] = fallbackImpl;

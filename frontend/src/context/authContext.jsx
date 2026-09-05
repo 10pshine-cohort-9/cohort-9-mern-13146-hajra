@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, useCallback ,useMemo} from "react";
 import authService from "../services/authService";
 
 export const AuthContext = createContext(null);
@@ -96,16 +96,16 @@ const updateUserProfile = async (formData) => {
   return response;
 };
 
-  const value = {
-    user,
-    token,
-    loading,
-    login,
-    signup,
-    logout,
-    updateUserProfile,
-    isAuthenticated: Boolean(token && user)
-  };
+ const value = useMemo(() => ({
+  user,
+  token,
+  loading,
+  login,
+  signup,
+  logout,
+  updateUserProfile,
+  isAuthenticated: Boolean(token && user)
+}), [user, token, loading, login, signup, logout, updateUserProfile]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

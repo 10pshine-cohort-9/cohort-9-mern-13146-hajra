@@ -127,7 +127,7 @@ describe("User & Note Search API Endpoints", () => {
 
             expect(res.status).to.equal(200);
             expect(res.body.success).to.be.true;
-            expect(res.body.data.length).to.equal(1);
+            expect(res.body.data).to.have.lengthOf(1);
             expect(res.body.data[0].title).to.equal("Alpha Meeting Notes");
         });
 
@@ -138,7 +138,7 @@ describe("User & Note Search API Endpoints", () => {
 
             expect(res.status).to.equal(200);
             expect(res.body.success).to.be.true;
-            expect(res.body.data.length).to.equal(1);
+            expect(res.body.data).to.have.lengthOf(1);
             expect(res.body.data[0].title).to.equal("Alpha Meeting Notes");
         });
 
@@ -158,7 +158,7 @@ describe("User & Note Search API Endpoints", () => {
 
     expect(res.status).to.equal(200);
     expect(res.body.success).to.be.true;
-    expect(res.body.data.length).to.equal(2);
+    expect(res.body.data).to.have.lengthOf(2);
 });
 
 it("should filter notes by archived status", async () => {
@@ -168,7 +168,7 @@ it("should filter notes by archived status", async () => {
 
     expect(res.status).to.equal(200);
     expect(res.body.success).to.be.true;
-    expect(res.body.data.length).to.equal(1);
+    expect(res.body.data).to.have.lengthOf(1);
     expect(res.body.data[0].title).to.equal("Beta Archived Note");
 });
 
@@ -179,7 +179,7 @@ it("should filter notes by unarchived status", async () => {
 
     expect(res.status).to.equal(200);
     expect(res.body.success).to.be.true;
-    expect(res.body.data.length).to.equal(2);
+    expect(res.body.data).to.have.lengthOf(2);
 });
     });
     

@@ -3,8 +3,11 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authContext";
 import { FiLogOut, FiX } from "react-icons/fi";
 import { RiLayoutLeftLine, RiLayoutRightLine } from "react-icons/ri";
+import ProfileSection from '../components/common/ProfileSection';
+import { getProfilePicUrl } from '../services/api';  
 
 import PropTypes from 'prop-types';
+
 
 const NAVIGATION_ITEMS = [
   { label: "Dashboard", path: "/dashboard", icon: "📝" },
@@ -17,6 +20,76 @@ const FILTER_ITEMS = [
   { label: "Pinned", value: "pinned", icon: "📌" },
   { label: "Archived", value: "archived", icon: "🗄️" },
 ];
+
+
+
+const NavigationItems = ({ isCollapsed, onClose }) => (
+  <div className="space-y-1.5">
+    {!isCollapsed && (
+      <p className="px-5 text-xs font-bold uppercase tracking-wider text-purple-200/70 mb-2">
+        Menu
+      </p>
+    )}
+    {NAVIGATION_ITEMS.map((item) => (
+      <NavLink
+        key={item.label}
+        to={item.path}
+        onClick={onClose}
+        title={isCollapsed ? item.label : ""}
+        className={({ isActive }) =>
+          `flex items-center gap-4 px-5 py-4 rounded-xl text-lg font-semibold transition-all ${
+            isActive
+              ? "bg-white/25 text-white shadow-inner"
+              : "text-purple-100 hover:bg-white/10 hover:text-white"
+          } ${isCollapsed ? "lg:justify-center lg:px-2" : ""}`
+        }
+      >
+        <span className="text-xl shrink-0">{item.icon}</span>
+        <span className={`${isCollapsed ? "lg:hidden" : ""}`}>{item.label}</span>
+      </NavLink>
+    ))}
+  </div>
+);
+
+NavigationItems.propTypes = {
+  isCollapsed: PropTypes.bool,
+  onClose: PropTypes.func,
+};
+
+const FilterItems = ({ filter, isCollapsed, onFilterChange, onClose }) => (
+  <div className="space-y-1.5">
+    {!isCollapsed && (
+      <p className="px-5 text-xs font-bold uppercase tracking-wider text-purple-200/70 mb-2">
+        Filters
+      </p>
+    )}
+    {FILTER_ITEMS.map((item) => (
+      <button
+        type="button"
+        key={item.value}
+        onClick={() => { onFilterChange(item.value); onClose?.(); }}
+        title={isCollapsed ? item.label : ""}
+        className={`w-full flex items-center gap-4 px-5 py-4 rounded-xl text-lg font-semibold transition-all ${
+          filter === item.value
+            ? "bg-white/25 text-white shadow-inner"
+            : "text-purple-100 hover:bg-white/10 hover:text-white"
+        } ${isCollapsed ? "lg:justify-center lg:px-2" : ""}`}
+      >
+        <span className="text-xl shrink-0">{item.icon}</span>
+        <span className={`${isCollapsed ? "lg:hidden" : ""}`}>{item.label}</span>
+      </button>
+    ))}
+  </div>
+);
+
+FilterItems.propTypes = {
+  filter: PropTypes.oneOf(['all', 'pinned', 'archived']),
+  isCollapsed: PropTypes.bool,
+  onFilterChange: PropTypes.func,
+  onClose: PropTypes.func,
+};
+
+
 function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse, filter, onFilterChange }) {
       const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -26,18 +99,18 @@ function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse, filter, onFil
     navigate("/login");
   };
 
-  const profilePicUrl = user?.profile_picture 
-    ? (user.profile_picture.startsWith("http") ? user.profile_picture : `http://localhost:5000${user.profile_picture}`)
-    : null;
+  const profilePicUrl = getProfilePicUrl(user);
 
   return (
     <>
-      {isOpen && (
-        <div 
-          onClick={onClose} 
-          className="fixed inset-0 bg-black/40 z-40 lg:hidden backdrop-blur-xs transition-opacity"
-        />
-      )}
+     {isOpen && (
+    <button
+        type="button"
+        onClick={onClose}
+        aria-label="Close sidebar overlay"
+        className="fixed inset-0 bg-black/40 z-40 lg:hidden backdrop-blur-xs transition-opacity"
+    />
+)}
 
       <aside
         className={`
@@ -52,7 +125,6 @@ function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse, filter, onFil
           <div className="flex items-center gap-20 justify-between mb-12">
           
 
-            {/* Logo + Title */}
             <div className={`flex items-center gap-3 overflow-hidden flex-1 justify-end lg:justify-start ${isCollapsed ? "lg:hidden" : ""}`}>
               <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center font-bold text-lg shrink-0">
                 N
@@ -63,6 +135,7 @@ function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse, filter, onFil
             </div>
 
             <button
+            type="button" 
               onClick={onToggleCollapse}
               className="hidden lg:flex text-white hover:bg-white/10 p-2.5 rounded-xl transition-colors shrink-0"
               title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
@@ -75,6 +148,7 @@ function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse, filter, onFil
             </button>
 
             <button 
+             type="button"
               onClick={onClose}
               className="lg:hidden text-white hover:bg-white/10 p-2.5 rounded-xl transition-colors shrink-0"
               aria-label="Close sidebar"
@@ -83,95 +157,25 @@ function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse, filter, onFil
             </button>
           </div>
 
-                   <nav className="space-y-6">
-            {/* Main navigation */}
-            <div className="space-y-1.5">
-              {!isCollapsed && (
-                <p className="px-5 text-xs font-bold uppercase tracking-wider text-purple-200/70 mb-2">
-                  Menu
-                </p>
-              )}
-              {NAVIGATION_ITEMS.map((item) => (
-                <NavLink
-                  key={item.label}
-                  to={item.path}
-                  onClick={onClose}
-                  title={isCollapsed ? item.label : ""}
-                  className={({ isActive }) =>
-                    `flex items-center gap-4 px-5 py-4 rounded-xl text-lg font-semibold transition-all ${
-                      isActive
-                        ? "bg-white/25 text-white shadow-inner"
-                        : "text-purple-100 hover:bg-white/10 hover:text-white"
-                    } ${isCollapsed ? "lg:justify-center lg:px-2" : ""}`
-                  }
-                >
-                  <span className="text-xl shrink-0">{item.icon}</span>
-                  <span className={`${isCollapsed ? "lg:hidden" : ""}`}>{item.label}</span>
-                </NavLink>
-              ))}
-            </div>
-
-            {/* Note filters */}
-            <div className="space-y-1.5">
-              {!isCollapsed && (
-                <p className="px-5 text-xs font-bold uppercase tracking-wider text-purple-200/70 mb-2">
-                  Filters
-                </p>
-              )}
-              {FILTER_ITEMS.map((item) => (
-                <button
-                  key={item.value}
-                  onClick={() => { onFilterChange(item.value); onClose?.(); }}
-                  title={isCollapsed ? item.label : ""}
-                  className={`w-full flex items-center gap-4 px-5 py-4 rounded-xl text-lg font-semibold transition-all ${
-                    filter === item.value
-                      ? "bg-white/25 text-white shadow-inner"
-                      : "text-purple-100 hover:bg-white/10 hover:text-white"
-                  } ${isCollapsed ? "lg:justify-center lg:px-2" : ""}`}
-                >
-                  <span className="text-xl shrink-0">{item.icon}</span>
-                  <span className={`${isCollapsed ? "lg:hidden" : ""}`}>{item.label}</span>
-                </button>
-              ))}
-            </div>
-          </nav>
+              <nav className="space-y-6">
+  <NavigationItems isCollapsed={isCollapsed} onClose={onClose} />
+  <FilterItems 
+    filter={filter} 
+    isCollapsed={isCollapsed} 
+    onFilterChange={onFilterChange} 
+    onClose={onClose} 
+  />
+</nav>
         </div>
 
         <div className="pt-6 border-t border-purple-400/30">
-          <div 
+        <ProfileSection
+  user={user}
+  profilePicUrl={profilePicUrl}
+  isCollapsed={isCollapsed}
+  variant="sidebar"
   onClick={() => { navigate("/profile"); onClose?.(); }}
-  onKeyDown={(e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      navigate("/profile");
-      onClose?.();
-    }
-  }}
-  role="button"
-  tabIndex={0}
-  className={`flex items-center gap-4 mb-4 cursor-pointer p-2 rounded-xl hover:bg-white/10 transition-all group ${isCollapsed ? "lg:justify-center" : ""}`}
-  title="Go to Profile"
->
-            {profilePicUrl ? (
-              <img
-                src={profilePicUrl}
-                alt="Profile"
-                className="w-11 h-11 rounded-full object-cover border-2 border-white/40 shadow-sm shrink-0"
-              />
-            ) : (
-              <div className="w-11 h-11 rounded-full bg-white/30 flex items-center justify-center font-bold text-base text-white shrink-0">
-                {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
-              </div>
-            )}
-            <div className={`truncate ${isCollapsed ? "lg:hidden" : ""}`}>
-              <p className="text-base font-bold text-white truncate group-hover:underline">
-                {user?.name || "User"}
-              </p>
-              <p className="text-xs text-purple-200 truncate">
-                {user?.email || ""}
-              </p>
-            </div>
-          </div>
+/>
 
           <button
             onClick={handleLogout}

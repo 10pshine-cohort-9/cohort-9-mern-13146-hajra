@@ -17,6 +17,13 @@ export function NoteModal({ isOpen, onClose, onSave, initialData }) {
   const quillRef = useRef(null);
 
   useEffect(() => {
+  const editingArea = quillRef.current?.getEditingArea?.();
+  if (editingArea) {
+    editingArea.setAttribute('aria-labelledby', 'note-content-label');
+  }
+}, [editorKey]);
+
+  useEffect(() => {
     if (!isOpen) {
       setEditorKey(null);
       return;
@@ -107,25 +114,26 @@ const handleSubmit = async (e) => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block font-semibold text-[#6c67ac] mb-2 text-xl">Title</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full rounded-xl border border-gray-200 px-4.5 py-3.5 text-base bg-white border-purple-300 focus:bg-white focus:border-[#7C77C6] focus:outline-none focus:ring-2 focus:ring-[#7C77C6]/20 transition-all text-gray-800"
-              placeholder="Note title"
-            />
+           <label htmlFor="note-title" className="block font-semibold text-[#6c67ac] mb-2 text-xl">Title</label>
+<input
+  id="note-title" 
+  type="text"
+  value={title}
+  onChange={(e) => setTitle(e.target.value)}
+  className="w-full..."
+  placeholder="Note title"
+/>
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="block font-semibold text-[#6c67ac] text-xl">Content</label>
+              <span id="note-content-label" className="block font-semibold text-[#6c67ac] text-xl">Content</span>
              <div className="flex gap-1">
                 <div className="relative group">
                   <button
                     type="button"
                     onClick={handleUndo}
-                    aria-label="Undo" // <--- ADDED ARIA-LABEL HERE
+                    aria-label="Undo" 
                     className="p-2 rounded-lg bg-white border border-purple-300 text-[#7C77C6] hover:bg-purple-50 transition-colors"
                   >
                     <FiCornerUpLeft className="text-lg" />
@@ -138,7 +146,7 @@ const handleSubmit = async (e) => {
                   <button
                     type="button"
                     onClick={handleRedo}
-                    aria-label="Redo" // <--- ADDED ARIA-LABEL HERE
+                    aria-label="Redo" 
                     className="p-2 rounded-lg bg-white border border-purple-300 text-[#7C77C6] hover:bg-purple-50 transition-colors"
                   >
                     <FiCornerUpRight className="text-lg" />
@@ -152,15 +160,15 @@ const handleSubmit = async (e) => {
 
             <div className="bg-white rounded-xl border border-purple-300 note-editor">
               {editorKey !== null && (
-                <ReactQuill
-                  key={editorKey}
-                  ref={quillRef}
-                  theme="snow"
-                  defaultValue={content}
-                  onChange={setContent}
-                  modules={modules}
-                  placeholder="Write your note here..."
-                />
+               <ReactQuill
+  key={editorKey}
+  ref={quillRef}
+  theme="snow"
+  defaultValue={content}
+  onChange={setContent}
+  modules={modules}
+  placeholder="Write your note here..."
+/>
               )}
             </div>
           </div>

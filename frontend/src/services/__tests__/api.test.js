@@ -1,5 +1,5 @@
 import axios from "axios";
-import api from "../api";
+import api , { getProfilePicUrl } from "../api";
 
 describe("api service & interceptors", () => {
   const originalLocation = window.location;
@@ -124,4 +124,82 @@ describe("Base Configuration", () => {
     });
   });
  
+});
+
+describe("getProfilePicUrl", () => {
+  it("returns null when user is null", () => {
+    expect(getProfilePicUrl(null)).toBeNull();
+  });
+
+  it("returns null when user is undefined", () => {
+    expect(getProfilePicUrl(undefined)).toBeNull();
+  });
+
+  it("returns null when user has no profile_picture", () => {
+    const user = { name: "Test User" };
+    expect(getProfilePicUrl(user)).toBeNull();
+  });
+
+  it("returns the full URL when profile_picture starts with http", () => {
+    const user = {
+      name: "Test User",
+      profile_picture: "https://example.com/image.jpg"
+    };
+    expect(getProfilePicUrl(user)).toBe("https://example.com/image.jpg");
+  });
+
+  it("constructs URL when profile_picture is a relative path with VITE_API_URL set", () => {
+    const originalEnv = import.meta.env.VITE_API_URL;
+    
+    import.meta.env.VITE_API_URL = "https://api.example.com/api";
+    
+    jest.resetModules();
+    const { getProfilePicUrl: getUrl } = require("../api");
+    
+    const user = {
+      name: "Test User",
+      profile_picture: "/uploads/avatar.jpg"
+    };
+    
+    expect(getUrl(user)).toBe("https://api.example.com/uploads/avatar.jpg");
+    
+    import.meta.env.VITE_API_URL = originalEnv;
+  });
+
+  it("falls back to localhost:5000 when VITE_API_URL is not set", () => {
+    const originalEnv = import.meta.env.VITE_API_URL;
+    
+    delete import.meta.env.VITE_API_URL;
+    
+    jest.resetModules();
+    const { getProfilePicUrl: getUrl } = require("../api");
+    
+    const user = {
+      name: "Test User",
+      profile_picture: "/uploads/avatar.jpg"
+    };
+    
+    expect(getUrl(user)).toBe("http://localhost:5000/uploads/avatar.jpg");
+    
+    import.meta.env.VITE_API_URL = originalEnv;
+  });
+
+  it("handles invalid URL in getApiOrigin gracefully by falling back to localhost", () => {
+    const originalEnv = import.meta.env.VITE_API_URL;
+    
+    import.meta.env.VITE_API_URL = "not-a-valid-url";
+    
+    jest.resetModules();
+    const { getProfilePicUrl: getUrl } = require("../api");
+    
+    const user = {
+      name: "Test User",
+      profile_picture: "/uploads/avatar.jpg"
+    };
+    
+    expect(getUrl(user)).toBe("http://localhost:5000/uploads/avatar.jpg");
+    
+    // Restore original env
+    import.meta.env.VITE_API_URL = originalEnv;
+  });
 });

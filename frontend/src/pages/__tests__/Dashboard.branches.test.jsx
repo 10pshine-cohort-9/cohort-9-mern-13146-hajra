@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within , act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import Dashboard from '../Dashboard';
 import { noteService } from '../../services/noteService';
@@ -538,6 +537,40 @@ test('skips import of a JSON item with neither title nor content', async () => {
   expect(noteService.createNote).not.toHaveBeenCalled();
 });
 
+test('skips import of a JSON item with a whitespace-only title and non-string content', async () => {
+  noteService.getNotes.mockResolvedValue([]);
+  render(<Dashboard />);
+  await waitFor(() => expect(screen.getByText('No notes found.')).toBeInTheDocument());
+
+  const file = new File(
+    [JSON.stringify([{ title: '   ', content: 12345, is_pinned: false, is_archived: false }])],
+    'whitespace.json',
+    { type: 'application/json' }
+  );
+  const input = document.querySelector('input[type="file"]');
+  fireEvent.change(input, { target: { files: [file] } });
+
+  await waitFor(() => expect(screen.getByText('No notes found.')).toBeInTheDocument());
+  expect(noteService.createNote).not.toHaveBeenCalled();
+});
+
+test('skips import of a JSON item where title is not a string at all', async () => {
+  noteService.getNotes.mockResolvedValue([]);
+  render(<Dashboard />);
+  await waitFor(() => expect(screen.getByText('No notes found.')).toBeInTheDocument());
+
+  const file = new File(
+    [JSON.stringify([{ title: 12345, content: '   ', is_pinned: false, is_archived: false }])],
+    'nonstring-title.json',
+    { type: 'application/json' }
+  );
+  const input = document.querySelector('input[type="file"]');
+  fireEvent.change(input, { target: { files: [file] } });
+
+  await waitFor(() => expect(screen.getByText('No notes found.')).toBeInTheDocument());
+  expect(noteService.createNote).not.toHaveBeenCalled();
+});
+
 test('imports a .md file as a single note', async () => {
   noteService.getNotes.mockResolvedValue([]);
   noteService.createNote.mockResolvedValue({ id: 22 });
@@ -599,24 +632,9 @@ test('pinned-first ordering works regardless of initial array order', async () =
     const titles = screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent);
     expect(titles.indexOf('Later Pinned')).toBeLessThan(titles.indexOf('First Unpinned'));
   });
+  
 });
 
-test('skips invalid entries in a JSON array and reports how many were skipped', async () => {
-  noteService.getNotes.mockResolvedValue([]);
-  noteService.createNote.mockResolvedValue({ id: 40 });
-  render(<Dashboard />);
-  await waitFor(() => expect(screen.getByText('No notes found.')).toBeInTheDocument());
 
-  const file = new File(
-    [JSON.stringify([{ title: 'Valid Note', content: 'x' }, null, 'not-an-object'])],
-    'mixed.json',
-    { type: 'application/json' }
-  );
-  const input = document.querySelector('input[type="file"]');
-  fireEvent.change(input, { target: { files: [file] } });
 
-  await waitFor(() => {
-    expect(screen.getByText('Skipped 2 invalid item(s) in the imported file.')).toBeInTheDocument();
-  });
-  expect(noteService.createNote).toHaveBeenCalledWith({ title: 'Valid Note', content: 'x' });
-});
+

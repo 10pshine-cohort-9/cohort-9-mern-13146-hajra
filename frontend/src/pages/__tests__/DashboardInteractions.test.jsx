@@ -115,10 +115,10 @@ describe('Dashboard Interactions and Edge Cases', () => {
     const paletteButtons = screen.getAllByTitle('Change Color');
     fireEvent.click(paletteButtons[0]);
 
-    await waitFor(() => {
-      const lavenderBtn = screen.getByTitle('Lavender');
-      expect(lavenderBtn).toBeInTheDocument();
-      fireEvent.click(lavenderBtn);
+  await waitFor(() => {
+  expect(screen.getByTitle('Lavender')).toBeInTheDocument();
+});
+fireEvent.click(screen.getByTitle('Lavender')); 
     });
   });
 
@@ -152,7 +152,7 @@ describe('Dashboard Interactions and Edge Cases', () => {
       await waitFor(() => expect(screen.getByText('No Updated At')).toBeInTheDocument());
     });
   });
-});
+  
 
 test('newest/oldest sort falls back to created_at for notes missing updated_at', async () => {
   noteService.getNotes.mockResolvedValue([

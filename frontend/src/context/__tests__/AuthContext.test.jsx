@@ -17,12 +17,7 @@ describe("AuthContext", () => {
     localStorage.setItem("user", JSON.stringify(mockUser));
 
     const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>;
-    let result;
-
-    await act(async () => {
-      const hook = renderHook(() => useAuth(), { wrapper });
-      result = hook.result;
-    });
+    const { result } = renderHook(() => useAuth(), { wrapper });
 
     expect(result.current.token).toBe("stored-token");
     expect(result.current.user).toEqual(mockUser);
@@ -33,12 +28,7 @@ describe("AuthContext", () => {
     localStorage.setItem("user", "{invalid-json-string");
 
     const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>;
-    let result;
-
-    await act(async () => {
-      const hook = renderHook(() => useAuth(), { wrapper });
-      result = hook.result;
-    });
+    const { result } = renderHook(() => useAuth(), { wrapper });
 
     expect(result.current.user).toBeNull();
     expect(localStorage.getItem("token")).toBeNull();
@@ -142,8 +132,7 @@ it("handles login response without explicit user object", async () => {
       email: "hajra@example.com",
     });
   });
-
-  it("handles login failure by rethrowing error and preserving unauthenticated state", async () => {
+it("handles login failure by rethrowing error and preserving unauthenticated state", async () => {
     const errorMessage = "Invalid credentials";
     authService.login.mockRejectedValueOnce(new Error(errorMessage));
 
@@ -151,13 +140,11 @@ it("handles login response without explicit user object", async () => {
     const { result } = renderHook(() => useAuth(), { wrapper });
 
     let caughtError;
-    await act(async () => {
-      try {
-        await result.current.login("hajra@example.com", "wrongpass");
-      } catch (err) {
-        caughtError = err;
-      }
-    });
+    try {
+      await result.current.login("hajra@example.com", "wrongpass");
+    } catch (err) {
+      caughtError = err;
+    }
 
     expect(caughtError).toBeDefined();
     expect(caughtError.message).toBe(errorMessage);
@@ -170,18 +157,15 @@ it("handles login response without explicit user object", async () => {
 
     const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>;
     const { result } = renderHook(() => useAuth(), { wrapper });
+let caughtError;
+try {
+  await result.current.signup("Hajra", "hajra@example.com", "password123");
+} catch (err) {
+  caughtError = err;
+}
 
-    let caughtError;
-    await act(async () => {
-      try {
-        await result.current.signup("Hajra", "hajra@example.com", "password123");
-      } catch (err) {
-        caughtError = err;
-      }
-    });
-
-    expect(caughtError).toBeDefined();
-    expect(caughtError.message).toBe(errorMessage);
+expect(caughtError).toBeDefined();
+expect(caughtError.message).toBe(errorMessage);
     expect(result.current.user).toBeNull();
   });
 
@@ -208,12 +192,7 @@ it("handles login response without explicit user object", async () => {
     localStorage.setItem("user", JSON.stringify({ id: "1", name: "Hajra" }));
 
     const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>;
-    let result;
-
-    await act(async () => {
-      const hook = renderHook(() => useAuth(), { wrapper });
-      result = hook.result;
-    });
+    const { result } = renderHook(() => useAuth(), { wrapper });
 
     await act(async () => {
       result.current.logout();
@@ -321,25 +300,23 @@ it("handles errors gracefully during token/profile initialization in useEffect",
     expect(result.current.user).toBeNull();
   });
 
-  it("handles update profile failure by throwing error", async () => {
+ it("handles update profile failure by throwing error", async () => {
     authService.updateProfile.mockRejectedValueOnce(new Error("Update failed"));
 
     const wrapper = ({ children }) => <AuthProvider>{children}</AuthProvider>;
     const { result } = renderHook(() => useAuth(), { wrapper });
 
     let caughtError;
-    await act(async () => {
-      try {
-        await result.current.updateUserProfile({ name: "Fail" });
-      } catch (err) {
-        caughtError = err;
-      }
-    });
+    try {
+      await result.current.updateUserProfile({ name: "Fail" });
+    } catch (err) {
+      caughtError = err;
+    }
 
     expect(caughtError).toBeDefined();
     expect(caughtError.message).toBe("Update failed");
   });
-
+  
  it("skips profile fetching and sets loading to false when no token exists on mount", async () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");

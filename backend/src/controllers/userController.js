@@ -49,7 +49,7 @@ async function updateUserProfile(req, res, next) {
 
         const profilePicturePath = req.file ? `/uploads/${req.file.filename}` : undefined;
 
-        let hashedPassword = undefined;
+        let hashedPassword;
         if (password !== undefined) {
             hashedPassword = await bcrypt.hash(password, 10);
         }
@@ -65,7 +65,8 @@ async function updateUserProfile(req, res, next) {
         const getUser = userModel.findUserById || userModel.getUserById;
         const updatedUser = await getUser(userId);
 
-        const { password: _, ...userWithoutPassword } = updatedUser || {};
+        const userWithoutPassword = updatedUser || {};
+delete userWithoutPassword.password;
 
         return res.status(200).json({
             success: true,

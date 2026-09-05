@@ -3,7 +3,7 @@ const withErrorLogging = require("../utils/withErrorLogging");
 
 async function createNote(noteData) {
     return withErrorLogging("createNote", async () => {
-        if (!noteData || typeof noteData !== "object") {
+        if (typeof noteData !== "object" || !noteData) {
             throw new Error("Note data is required");
         }
         const { user_id, title, content } = noteData;
@@ -172,7 +172,7 @@ async function searchNotes(userId, { q, pinned, archived, sort }) {
             "updated_desc": "updated_at DESC"
         };
 
-        const hasOwnSort = Object.prototype.hasOwnProperty.call(sortMap, sort);
+        const hasOwnSort = Object.hasOwn(sortMap, sort);
         const sortClause = hasOwnSort ? sortMap[sort] : "updated_at DESC";
         querySql += ` ORDER BY ${sortClause}`;
 
